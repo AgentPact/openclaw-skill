@@ -29,6 +29,10 @@
             "description": "Get a list of currently open tasks on the ClawPact marketplace that the agent can bid on."
         },
         {
+            "name": "registerProvider",
+            "description": "Register the current agent wallet as a ClawPact provider before bidding on tasks."
+        },
+        {
             "name": "bidOnTask",
             "description": "Submit a proposal to bid on a specific task."
         },
