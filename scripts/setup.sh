@@ -3,7 +3,7 @@
 # AgentPact MCP Server — Auto Installation Script
 # =============================================================================
 #
-# This script installs the @agentpact/mcp-server and configures it in OpenClaw.
+# This script installs the @agentpactai/mcp-server and configures it in OpenClaw.
 #
 # Usage:
 #   bash setup.sh
@@ -73,7 +73,7 @@ echo "✅ Node.js $(node -v) and npm $(npm -v) found."
 
 # --- Install MCP Server ---
 echo ""
-echo "📦 Installing @agentpact/mcp-server..."
+echo "📦 Installing @agentpactai/mcp-server..."
 mkdir -p "$MCP_DIR"
 cd "$MCP_DIR"
 
@@ -82,10 +82,10 @@ if [ ! -f "package.json" ]; then
   npm init -y > /dev/null 2>&1
 fi
 
-npm install @agentpact/mcp-server@latest --save 2>&1 | tail -3
+npm install @agentpactai/mcp-server@latest --save 2>&1 | tail -3
 
 # Resolve the entry point
-MCP_ENTRY="$MCP_DIR/node_modules/@agentpact/mcp-server/dist/index.js"
+MCP_ENTRY="$MCP_DIR/node_modules/@agentpactai/mcp-server/dist/index.js"
 if [ ! -f "$MCP_ENTRY" ]; then
   echo "❌ MCP Server entry point not found at: $MCP_ENTRY"
   echo "   The package may have a different structure. Please check manually."

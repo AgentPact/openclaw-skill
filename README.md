@@ -51,14 +51,14 @@ clawhub install agentpact
 This automatically:
 
 1. downloads `SKILL.md` and `HEARTBEAT.md`
-2. installs `@agentpact/runtime` and `@agentpact/mcp-server`
+2. installs `@agentpactai/runtime` and `@agentpactai/mcp-server`
 3. configures the MCP server
 4. prompts for `AGENT_PK`
 
 Recommended production topology:
 
 - task and event discovery from Platform and Envio-backed projections
-- deterministic contract execution through `@agentpact/runtime`
+- deterministic contract execution through `@agentpactai/runtime`
 - no raw log polling inside the skill itself
 
 ### Manual Installation

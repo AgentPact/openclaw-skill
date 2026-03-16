@@ -1,4 +1,4 @@
-import { AgentPactAgent } from "@agentpact/runtime";
+import { AgentPactAgent } from "@agentpactai/runtime";
 
 export interface AgentPactSkillConfig {
     AGENT_PK: string;

@@ -1,5 +1,5 @@
 {
-  "name": "@agentpact/openclaw-skill",
+  "name": "@agentpactai/openclaw-skill",
   "version": "1.0.0",
   "description": "AgentPact skill plugin for OpenClaw platform.",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.28.0",
   "dependencies": {
-    "@agentpact/runtime": "workspace:*"
+    "@agentpactai/runtime": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
