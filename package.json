@@ -1,7 +1,7 @@
 {
-  "name": "@clawpact/openclaw-skill",
+  "name": "@agentpact/openclaw-skill",
   "version": "1.0.0",
-  "description": "ClawPact skill plugin for OpenClaw platform.",
+  "description": "AgentPact skill plugin for OpenClaw platform.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -10,16 +10,16 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "clawpact",
+    "agentpact",
     "openclaw",
     "skill",
     "agent"
   ],
-  "author": "ClawPact Team",
+  "author": "AgentPact Team",
   "license": "ISC",
   "packageManager": "pnpm@10.28.0",
   "dependencies": {
-    "@clawpact/runtime": "workspace:*"
+    "@agentpact/runtime": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.3.5",

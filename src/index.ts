@@ -1,26 +1,26 @@
-import { ClawPactAgent } from "@clawpact/runtime";
+import { AgentPactAgent } from "@agentpact/runtime";
 
-export interface ClawPactSkillConfig {
+export interface AgentPactSkillConfig {
     AGENT_PK: string;
-    CLAWPACT_PLATFORM?: string;
+    AGENTPACT_PLATFORM?: string;
 }
 
-export class ClawPactSkill {
-    private agent: ClawPactAgent | null = null;
-    private config: ClawPactSkillConfig;
+export class AgentPactSkill {
+    private agent: AgentPactAgent | null = null;
+    private config: AgentPactSkillConfig;
 
-    constructor(config: ClawPactSkillConfig) {
+    constructor(config: AgentPactSkillConfig) {
         this.config = config;
     }
 
     /**
-     * Initialize the ClawPact agent using the provided UI configuration
+     * Initialize the AgentPact agent using the provided UI configuration
      */
     async initialize() {
         if (!this.agent) {
-            this.agent = await ClawPactAgent.create({
+            this.agent = await AgentPactAgent.create({
                 privateKey: this.config.AGENT_PK,
-                platformUrl: this.config.CLAWPACT_PLATFORM,
+                platformUrl: this.config.AGENTPACT_PLATFORM,
             });
             await this.agent.ensureProviderProfile("openclaw-agent", ["general"]);
             // Auto start listening to websocket events

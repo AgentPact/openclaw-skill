@@ -1,9 +1,9 @@
 #!/bin/bash
 # =============================================================================
-# ClawPact MCP Server — Auto Installation Script
+# AgentPact MCP Server — Auto Installation Script
 # =============================================================================
 #
-# This script installs the @clawpact/mcp-server and configures it in OpenClaw.
+# This script installs the @agentpact/mcp-server and configures it in OpenClaw.
 #
 # Usage:
 #   bash setup.sh
@@ -15,9 +15,9 @@
 set -e
 
 # --- Configuration ---
-MCP_DIR="$HOME/.openclaw/mcp-servers/clawpact"
+MCP_DIR="$HOME/.openclaw/mcp-servers/agentpact"
 CONFIG_FILE="$HOME/.openclaw/openclaw.json"
-DEFAULT_PLATFORM="https://api.clawpact.io"
+DEFAULT_PLATFORM="https://api.agentpact.io"
 PLATFORM_URL="$DEFAULT_PLATFORM"
 
 # --- Parse arguments ---
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: bash setup.sh [--platform URL] [--pk PRIVATE_KEY]"
       echo ""
       echo "Options:"
-      echo "  --platform URL    ClawPact platform API URL (default: $DEFAULT_PLATFORM)"
+      echo "  --platform URL    AgentPact platform API URL (default: $DEFAULT_PLATFORM)"
       echo "  --pk KEY          Agent private key (hex, without 0x prefix)"
       echo ""
       echo "Example:"
@@ -73,7 +73,7 @@ echo "✅ Node.js $(node -v) and npm $(npm -v) found."
 
 # --- Install MCP Server ---
 echo ""
-echo "📦 Installing @clawpact/mcp-server..."
+echo "📦 Installing @agentpact/mcp-server..."
 mkdir -p "$MCP_DIR"
 cd "$MCP_DIR"
 
@@ -82,10 +82,10 @@ if [ ! -f "package.json" ]; then
   npm init -y > /dev/null 2>&1
 fi
 
-npm install @clawpact/mcp-server@latest --save 2>&1 | tail -3
+npm install @agentpact/mcp-server@latest --save 2>&1 | tail -3
 
 # Resolve the entry point
-MCP_ENTRY="$MCP_DIR/node_modules/@clawpact/mcp-server/dist/index.js"
+MCP_ENTRY="$MCP_DIR/node_modules/@agentpact/mcp-server/dist/index.js"
 if [ ! -f "$MCP_ENTRY" ]; then
   echo "❌ MCP Server entry point not found at: $MCP_ENTRY"
   echo "   The package may have a different structure. Please check manually."
@@ -121,14 +121,14 @@ try {
   cfg = {};
 }
 
-// Inject mcpServers.clawpact
+// Inject mcpServers.agentpact
 cfg.mcpServers = cfg.mcpServers || {};
-cfg.mcpServers.clawpact = {
+cfg.mcpServers.agentpact = {
   command: 'node',
   args: [entry],
   env: {
     AGENT_PK: pk || '⚠️ REPLACE_WITH_YOUR_PRIVATE_KEY',
-    CLAWPACT_PLATFORM: platform
+    AGENTPACT_PLATFORM: platform
   }
 };
 
@@ -139,7 +139,7 @@ console.log('✅ MCP Server config injected into: ' + path);
 # --- Summary ---
 echo ""
 echo "============================================="
-echo "  🎉 ClawPact MCP Server Setup Complete!"
+echo "  🎉 AgentPact MCP Server Setup Complete!"
 echo "============================================="
 echo ""
 echo "  MCP Server:  $MCP_DIR"
@@ -159,5 +159,5 @@ else
   echo ""
 fi
 
-echo "  Restart OpenClaw to activate the ClawPact tools."
+echo "  Restart OpenClaw to activate the AgentPact tools."
 echo "============================================="

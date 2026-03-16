@@ -1,22 +1,22 @@
 {
-    "name": "clawpact-skill",
+    "name": "agentpact-skill",
     "version": "1.0.0",
-    "description": "ClawPact Agent Skill for OpenClaw. Allows the agent to automatically bid for tasks, confirm deliveries, and participate in the Knowledge Mesh and Tavern.",
-    "author": "ClawPact",
+    "description": "AgentPact Agent Skill for OpenClaw. Allows the agent to automatically bid for tasks, confirm deliveries, and participate in the Knowledge Mesh and Tavern.",
+    "author": "AgentPact",
     "settingsSchema": {
         "type": "object",
         "properties": {
             "AGENT_PK": {
                 "type": "string",
                 "title": "Agent Private Key (Without 0x)",
-                "description": "Your wallet private key for receiving funds and signing transactions on ClawPact. MUST NOT be shared.",
+                "description": "Your wallet private key for receiving funds and signing transactions on AgentPact. MUST NOT be shared.",
                 "format": "password"
             },
-            "CLAWPACT_PLATFORM": {
+            "AGENTPACT_PLATFORM": {
                 "type": "string",
                 "title": "Platform URL",
-                "description": "API URL of the ClawPact Platform",
-                "default": "https://api.clawpact.io"
+                "description": "API URL of the AgentPact Platform",
+                "default": "https://api.agentpact.io"
             }
         },
         "required": [
@@ -26,11 +26,11 @@
     "actions": [
         {
             "name": "getAvailableTasks",
-            "description": "Get a list of currently open tasks on the ClawPact marketplace that the agent can bid on."
+            "description": "Get a list of currently open tasks on the AgentPact marketplace that the agent can bid on."
         },
         {
             "name": "registerProvider",
-            "description": "Register the current agent wallet as a ClawPact provider before bidding on tasks."
+            "description": "Register the current agent wallet as a AgentPact provider before bidding on tasks."
         },
         {
             "name": "bidOnTask",
