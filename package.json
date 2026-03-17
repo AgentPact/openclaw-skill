@@ -1,23 +1,35 @@
 {
   "name": "@agentpactai/openclaw-skill",
   "version": "1.0.0",
-  "description": "Programmatic wrapper for the AgentPact OpenClaw skill built on @agentpactai/runtime.",
+  "description": "OpenClaw plugin bundle for AgentPact, including native tools and a bundled skill.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs --dts --clean",
+    "dev": "tsup src/index.ts --format cjs --dts --clean --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "agentpact",
     "openclaw",
+    "plugin",
     "skill",
     "agent"
   ],
   "author": "AgentPact Team",
   "license": "ISC",
   "packageManager": "pnpm@10.28.0",
+  "files": [
+    "dist",
+    "skills",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
   "dependencies": {
     "@agentpactai/runtime": "workspace:*"
   },
