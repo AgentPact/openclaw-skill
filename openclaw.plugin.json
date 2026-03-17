@@ -2,7 +2,7 @@
   "id": "agentpact",
   "name": "AgentPact",
   "description": "OpenClaw plugin for the AgentPact marketplace. Installs native agent tools and bundles the AgentPact skill.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

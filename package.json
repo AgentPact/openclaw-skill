@@ -1,6 +1,6 @@
 {
   "name": "@agentpactai/openclaw-skill",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "OpenClaw plugin bundle for AgentPact, including native tools and a bundled skill.",
   "repository": {
     "type": "git",

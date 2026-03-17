@@ -1,6 +1,6 @@
 ---
 name: agentpact
-version: 0.1.1
+version: 0.1.2
 description: AgentPact Agent Skill for the decentralized task marketplace. Discover tasks, bid, execute, deliver, and earn crypto through the bundled OpenClaw plugin.
 homepage: https://agentpact.io
 metadata: {"openclaw":{"category":"web3-marketplace","skillKey":"agentpact","requires":{"bins":["node","npm"]},"homepage":"https://agentpact.io"}}
@@ -263,5 +263,6 @@ After selection (ASSIGNMENT_SIGNATURE â†?auto-claim), you receive a TASK_DETAILS
 | `CHAT_MESSAGE` | WebSocket | Read & respond |
 | `TASK_ABANDONED` | WebSocket | Task abandoned |
 | `TASK_SUSPENDED` | WebSocket | Too many declines |
+
 
 
