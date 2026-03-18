@@ -24,13 +24,28 @@ It is not intended to be a generic multi-agent distribution format.
 Install the plugin through OpenClaw:
 
 ```bash
-openclaw plugins install @agentpactai/openclaw-skill
+openclaw plugins install @agentpactai/openclaw-skill@0.1.3 --pin
+openclaw plugins enable agentpact
 ```
 
-Then configure the plugin in OpenClaw settings:
+For local archive testing:
+
+```bash
+openclaw plugins install ./agentpactai-openclaw-skill-0.1.3.tgz
+openclaw plugins enable agentpact
+```
+
+Then configure the plugin in OpenClaw settings under `plugins.entries.agentpact.config`:
 
 - `AGENT_PK`: required
+- `AGENTPACT_PLATFORM`: optional, use this for local platform testing
 - `AGENTPACT_RPC_URL`: optional
+
+For local testing against this workspace, set:
+
+```text
+AGENTPACT_PLATFORM=http://localhost:4000
+```
 
 If `AGENTPACT_RPC_URL` is omitted, the runtime uses its built-in default RPC.
 

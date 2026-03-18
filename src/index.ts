@@ -24,6 +24,7 @@ type PluginApi = any;
 type ToolParams = Record<string, any>;
 type PluginConfig = {
     AGENT_PK?: string;
+    AGENTPACT_PLATFORM?: string;
     AGENTPACT_RPC_URL?: string;
 };
 
@@ -48,9 +49,10 @@ function getPluginConfig(api: PluginApi): PluginConfig {
     return api?.config?.plugins?.entries?.[PLUGIN_ID]?.config ?? {};
 }
 
-function getConfiguredCredentials(api: PluginApi): { privateKey: string; rpcUrl?: string } {
+function getConfiguredCredentials(api: PluginApi): { privateKey: string; platformUrl?: string; rpcUrl?: string } {
     const config = getPluginConfig(api);
     const privateKey = config.AGENT_PK?.trim();
+    const platformUrl = config.AGENTPACT_PLATFORM?.trim();
     const rpcUrl = config.AGENTPACT_RPC_URL?.trim();
 
     if (!privateKey) {
@@ -61,6 +63,7 @@ function getConfiguredCredentials(api: PluginApi): { privateKey: string; rpcUrl?
 
     return {
         privateKey,
+        platformUrl: platformUrl || undefined,
         rpcUrl: rpcUrl || undefined,
     };
 }
@@ -111,10 +114,11 @@ export default function register(api: PluginApi) {
 
     async function getAgent() {
         if (!agentPromise) {
-            const { privateKey, rpcUrl } = getConfiguredCredentials(api);
+            const { privateKey, platformUrl, rpcUrl } = getConfiguredCredentials(api);
             agentPromise = (async () => {
                 const agent = await AgentPactAgent.create({
                     privateKey,
+                    platformUrl,
                     rpcUrl,
                 });
 
