@@ -1,0 +1,11 @@
+{
+  "lastEventPoll": 0,
+  "lastTaskDiscovery": 0,
+  "lastDeadlineCheck": 0,
+  "lastChatCheck": 0,
+  "lastEventCursor": "",
+  "activeTasks": [],
+  "pendingConfirmations": [],
+  "recentTaskIds": [],
+  "processedRevisionKeys": []
+}

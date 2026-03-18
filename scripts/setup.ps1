@@ -1,6 +1,8 @@
 param(
     [string]$Rpc = "",
-    [string]$Pk = ""
+    [string]$Pk = "",
+    [string]$Platform = "",
+    [string]$Jwt = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,6 +11,7 @@ $mcpDir = Join-Path $HOME ".openclaw\mcp-servers\agentpact"
 $configFile = Join-Path $HOME ".openclaw\openclaw.json"
 $mcpEntry = Join-Path $mcpDir "node_modules\@agentpactai\mcp-server\dist\index.js"
 
+Write-Host "AgentPact OpenClaw setup (MCP-first mode)"
 Write-Host "Checking prerequisites..."
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -44,7 +47,7 @@ finally {
     Pop-Location
 }
 
-Write-Host "Configuring OpenClaw..."
+Write-Host "Updating OpenClaw MCP configuration..."
 
 New-Item -ItemType Directory -Force -Path (Split-Path $configFile -Parent) | Out-Null
 
@@ -67,16 +70,24 @@ if (-not $cfg.ContainsKey("mcpServers")) {
     $cfg["mcpServers"] = @{}
 }
 
-$cfg["mcpServers"]["agentpact"] = @{
-    command = "node"
-    args = @($mcpEntry)
-    env = @{
-        AGENT_PK = $(if ($Pk) { $Pk } else { "REPLACE_WITH_YOUR_PRIVATE_KEY" })
-    }
+$envMap = @{
+    AGENT_PK = $(if ($Pk) { $Pk } else { "REPLACE_WITH_YOUR_PRIVATE_KEY" })
 }
 
 if ($Rpc) {
-    $cfg["mcpServers"]["agentpact"]["env"]["AGENTPACT_RPC_URL"] = $Rpc
+    $envMap["AGENTPACT_RPC_URL"] = $Rpc
+}
+if ($Platform) {
+    $envMap["AGENTPACT_PLATFORM"] = $Platform
+}
+if ($Jwt) {
+    $envMap["AGENTPACT_JWT_TOKEN"] = $Jwt
+}
+
+$cfg["mcpServers"]["agentpact"] = @{
+    command = "node"
+    args = @($mcpEntry)
+    env = $envMap
 }
 
 $cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile
@@ -84,15 +95,16 @@ $cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile
 Write-Host ""
 Write-Host "AgentPact MCP setup complete."
 Write-Host "Config file: $configFile"
-if ($Rpc) {
-    Write-Host "RPC URL:     $Rpc"
-} else {
-    Write-Host "RPC URL:     default SDK RPC"
-}
-
+Write-Host "MCP entry:   $mcpEntry"
+if ($Platform) { Write-Host "Platform:    $Platform" }
+if ($Rpc) { Write-Host "RPC URL:     $Rpc" }
 if (-not $Pk) {
     Write-Host ""
-    Write-Host "Set AGENT_PK in the OpenClaw config before starting the agent."
+    Write-Host "Set AGENT_PK in the OpenClaw MCP config before using AgentPact."
 }
-
-Write-Host "Restart OpenClaw to load the AgentPact MCP server."
+Write-Host ""
+Write-Host "This repository now assumes MCP-first usage:"
+Write-Host "- mcp handles the AgentPact tools"
+Write-Host "- openclaw-skill provides the bundled skill, heartbeat, docs, and templates"
+Write-Host ""
+Write-Host "Restart OpenClaw to load the MCP server configuration."

@@ -1,19 +1,18 @@
 #!/bin/bash
-# Installs the AgentPact MCP server for OpenClaw.
+# AgentPact OpenClaw setup (MCP-first mode)
 #
-# This script installs only @agentpactai/mcp-server. The runtime SDK is pulled
-# in automatically as an npm dependency of the MCP package.
-#
-# Usage:
-#   bash setup.sh
-#   bash setup.sh --rpc https://your-rpc.example
-#   bash setup.sh --rpc https://your-rpc.example --pk abc123...
+# Installs @agentpactai/mcp-server and injects an OpenClaw MCP entry.
+# The openclaw-skill package then provides the bundled skill, heartbeat,
+# docs, templates, and integration guidance.
 
 set -e
 
 MCP_DIR="$HOME/.openclaw/mcp-servers/agentpact"
 CONFIG_FILE="$HOME/.openclaw/openclaw.json"
 RPC_URL=""
+PLATFORM_URL=""
+JWT_TOKEN=""
+AGENT_PK_VALUE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -21,33 +20,39 @@ while [[ $# -gt 0 ]]; do
       RPC_URL="$2"
       shift 2
       ;;
+    --platform)
+      PLATFORM_URL="$2"
+      shift 2
+      ;;
+    --jwt)
+      JWT_TOKEN="$2"
+      shift 2
+      ;;
     --pk)
       AGENT_PK_VALUE="$2"
       shift 2
       ;;
     --help)
-      echo "Usage: bash setup.sh [--rpc URL] [--pk PRIVATE_KEY]"
-      echo ""
-      echo "Options:"
-      echo "  --rpc URL         Optional custom RPC URL (default: SDK built-in RPC)"
-      echo "  --pk KEY          Agent private key (hex, without 0x prefix)"
-      echo ""
-      echo "Example:"
-      echo "  bash setup.sh --rpc https://sepolia.base.org --pk abc123..."
+      echo "Usage: bash setup.sh [--rpc URL] [--platform URL] [--jwt TOKEN] [--pk PRIVATE_KEY]"
       exit 0
       ;;
     *)
-      echo "Unknown option: $1 (use --help for usage)"
+      echo "Unknown option: $1"
       exit 1
       ;;
   esac
 done
 
+echo "AgentPact OpenClaw setup (MCP-first mode)"
 echo "Checking prerequisites..."
 
 if ! command -v node >/dev/null 2>&1; then
   echo "Node.js is not installed. Please install Node.js 18+ first."
-  echo "https://nodejs.org/"
+  exit 1
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm is not installed."
   exit 1
 fi
 
@@ -57,15 +62,7 @@ if [ "$NODE_VERSION" -lt 18 ]; then
   exit 1
 fi
 
-if ! command -v npm >/dev/null 2>&1; then
-  echo "npm is not installed."
-  exit 1
-fi
-
-echo "Node.js $(node -v) and npm $(npm -v) found."
-echo ""
 echo "Installing @agentpactai/mcp-server..."
-
 mkdir -p "$MCP_DIR"
 cd "$MCP_DIR"
 
@@ -81,10 +78,6 @@ if [ ! -f "$MCP_ENTRY" ]; then
   exit 1
 fi
 
-echo "MCP server installed at: $MCP_DIR"
-echo ""
-echo "Configuring OpenClaw..."
-
 mkdir -p "$(dirname "$CONFIG_FILE")"
 
 node -e "
@@ -92,7 +85,9 @@ const fs = require('fs');
 const path = '$CONFIG_FILE';
 const entry = '$MCP_ENTRY';
 const rpcUrl = '$RPC_URL';
-const pk = '${AGENT_PK_VALUE:-}';
+const platformUrl = '$PLATFORM_URL';
+const jwt = '$JWT_TOKEN';
+const pk = '$AGENT_PK_VALUE';
 
 let cfg = {};
 try {
@@ -105,46 +100,31 @@ try {
 }
 
 cfg.mcpServers = cfg.mcpServers || {};
+const env = { AGENT_PK: pk || 'REPLACE_WITH_YOUR_PRIVATE_KEY' };
+if (rpcUrl) env.AGENTPACT_RPC_URL = rpcUrl;
+if (platformUrl) env.AGENTPACT_PLATFORM = platformUrl;
+if (jwt) env.AGENTPACT_JWT_TOKEN = jwt;
+
 cfg.mcpServers.agentpact = {
   command: 'node',
   args: [entry],
-  env: Object.assign(
-    {
-      AGENT_PK: pk || 'REPLACE_WITH_YOUR_PRIVATE_KEY'
-    },
-    rpcUrl ? { AGENTPACT_RPC_URL: rpcUrl } : {}
-  )
+  env,
 };
 
 fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
-console.log('MCP server config injected into: ' + path);
+console.log('Updated MCP config at ' + path);
 "
 
 echo ""
-echo "============================================="
-echo "  AgentPact MCP setup complete"
-echo "============================================="
+echo "AgentPact MCP setup complete."
+echo "MCP entry:   $MCP_ENTRY"
+echo "Config file: $CONFIG_FILE"
+[ -n "$PLATFORM_URL" ] && echo "Platform:    $PLATFORM_URL"
+[ -n "$RPC_URL" ] && echo "RPC URL:     $RPC_URL"
+[ -z "$AGENT_PK_VALUE" ] && echo "Set AGENT_PK in the MCP config before using AgentPact."
 echo ""
-echo "  MCP Server:  $MCP_DIR"
-echo "  Config File: $CONFIG_FILE"
-if [ -n "$RPC_URL" ]; then
-  echo "  RPC URL:     $RPC_URL"
-else
-  echo "  RPC URL:     default SDK RPC"
-fi
+echo "This repository now assumes MCP-first usage:"
+echo "- mcp handles the AgentPact tools"
+echo "- openclaw-skill provides the bundled skill, heartbeat, docs, and templates"
 echo ""
-
-if [ -z "$AGENT_PK_VALUE" ]; then
-  echo "  IMPORTANT: You still need to set your private key."
-  echo ""
-  echo "  Edit ~/.openclaw/openclaw.json and replace:"
-  echo '    "AGENT_PK": "REPLACE_WITH_YOUR_PRIVATE_KEY"'
-  echo "  with your actual wallet private key (hex, no 0x prefix)."
-  echo ""
-else
-  echo "  Private key configured."
-  echo ""
-fi
-
-echo "  Restart OpenClaw to activate the AgentPact tools."
-echo "============================================="
+echo "Restart OpenClaw to load the MCP server configuration."

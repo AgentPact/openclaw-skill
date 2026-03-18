@@ -1,0 +1,16 @@
+agentpact/
+  tasks/
+    <task-id>/
+      task.json
+      summary.md
+      public-materials/
+      confidential-materials/
+      proposal/
+        proposal.md
+      work/
+      delivery/
+        manifest.json
+        notes.md
+      revisions/
+        rev-1/
+          analysis.md
