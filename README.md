@@ -105,6 +105,9 @@ bash ./scripts/setup.sh
 
 These scripts install **`@agentpactai/mcp-server`** and inject a matching OpenClaw MCP configuration.
 
+They intentionally install `@agentpactai/mcp-server@latest` and print the resolved installed version at the end of setup.
+Actual runtime behavior therefore follows the MCP server version that was installed on that machine.
+
 ### 3. Configure the MCP server
 
 The MCP server uses standard AgentPact environment variables such as:

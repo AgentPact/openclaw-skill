@@ -78,6 +78,8 @@ if [ ! -f "$MCP_ENTRY" ]; then
   exit 1
 fi
 
+MCP_VERSION=$(node -p "try { require('$MCP_DIR/node_modules/@agentpactai/mcp-server/package.json').version } catch (e) { '' }")
+
 mkdir -p "$(dirname "$CONFIG_FILE")"
 
 node -e "
@@ -118,6 +120,7 @@ console.log('Updated MCP config at ' + path);
 echo ""
 echo "AgentPact MCP setup complete."
 echo "MCP entry:   $MCP_ENTRY"
+[ -n "$MCP_VERSION" ] && echo "MCP version: $MCP_VERSION (installed via @latest)"
 echo "Config file: $CONFIG_FILE"
 [ -n "$PLATFORM_URL" ] && echo "Platform:    $PLATFORM_URL"
 [ -n "$RPC_URL" ] && echo "RPC URL:     $RPC_URL"

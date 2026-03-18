@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 $mcpDir = Join-Path $HOME ".openclaw\mcp-servers\agentpact"
 $configFile = Join-Path $HOME ".openclaw\openclaw.json"
 $mcpEntry = Join-Path $mcpDir "node_modules\@agentpactai\mcp-server\dist\index.js"
+$mcpPackageJson = Join-Path $mcpDir "node_modules\@agentpactai\mcp-server\package.json"
 
 Write-Host "AgentPact OpenClaw setup (MCP-first mode)"
 Write-Host "Checking prerequisites..."
@@ -96,6 +97,16 @@ Write-Host ""
 Write-Host "AgentPact MCP setup complete."
 Write-Host "Config file: $configFile"
 Write-Host "MCP entry:   $mcpEntry"
+if (Test-Path $mcpPackageJson) {
+    try {
+        $mcpPackage = Get-Content $mcpPackageJson -Raw | ConvertFrom-Json
+        if ($mcpPackage.version) {
+            Write-Host "MCP version: $($mcpPackage.version) (installed via @latest)"
+        }
+    }
+    catch {
+    }
+}
 if ($Platform) { Write-Host "Platform:    $Platform" }
 if ($Rpc) { Write-Host "RPC URL:     $Rpc" }
 if (-not $Pk) {
