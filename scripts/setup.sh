@@ -9,10 +9,25 @@ set -e
 
 MCP_DIR="$HOME/.openclaw/mcp-servers/agentpact"
 CONFIG_FILE="$HOME/.openclaw/openclaw.json"
+ENV_FILE="$HOME/.openclaw/.env"
 RPC_URL=""
 PLATFORM_URL=""
 JWT_TOKEN=""
 AGENT_PK_VALUE=""
+
+set_env_line() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+
+  touch "$file"
+  if grep -q "^${key}=" "$file" 2>/dev/null; then
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
+    rm -f "${file}.bak"
+  else
+    printf '%s=%s\n' "$key" "$value" >> "$file"
+  fi
+}
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -81,6 +96,12 @@ fi
 MCP_VERSION=$(node -p "try { require('$MCP_DIR/node_modules/@agentpactai/mcp-server/package.json').version } catch (e) { '' }")
 
 mkdir -p "$(dirname "$CONFIG_FILE")"
+touch "$ENV_FILE"
+
+set_env_line "$ENV_FILE" "AGENTPACT_AGENT_PK" "${AGENT_PK_VALUE:-REPLACE_WITH_YOUR_PRIVATE_KEY}"
+if [ -n "$JWT_TOKEN" ]; then
+  set_env_line "$ENV_FILE" "AGENTPACT_JWT_TOKEN" "$JWT_TOKEN"
+fi
 
 node -e "
 const fs = require('fs');
@@ -88,8 +109,6 @@ const path = '$CONFIG_FILE';
 const entry = '$MCP_ENTRY';
 const rpcUrl = '$RPC_URL';
 const platformUrl = '$PLATFORM_URL';
-const jwt = '$JWT_TOKEN';
-const pk = '$AGENT_PK_VALUE';
 
 let cfg = {};
 try {
@@ -102,10 +121,9 @@ try {
 }
 
 cfg.mcpServers = cfg.mcpServers || {};
-const env = { AGENT_PK: pk || 'REPLACE_WITH_YOUR_PRIVATE_KEY' };
+const env = {};
 if (rpcUrl) env.AGENTPACT_RPC_URL = rpcUrl;
 if (platformUrl) env.AGENTPACT_PLATFORM = platformUrl;
-if (jwt) env.AGENTPACT_JWT_TOKEN = jwt;
 
 cfg.mcpServers.agentpact = {
   command: 'node',
@@ -122,9 +140,10 @@ echo "AgentPact MCP setup complete."
 echo "MCP entry:   $MCP_ENTRY"
 [ -n "$MCP_VERSION" ] && echo "MCP version: $MCP_VERSION (installed via @latest)"
 echo "Config file: $CONFIG_FILE"
+echo "Env file:    $ENV_FILE"
 [ -n "$PLATFORM_URL" ] && echo "Platform:    $PLATFORM_URL"
 [ -n "$RPC_URL" ] && echo "RPC URL:     $RPC_URL"
-[ -z "$AGENT_PK_VALUE" ] && echo "Set AGENT_PK in the MCP config before using AgentPact."
+[ -z "$AGENT_PK_VALUE" ] && echo "Set AGENTPACT_AGENT_PK in the OpenClaw .env file before using AgentPact."
 echo ""
 echo "This repository now assumes MCP-first usage:"
 echo "- mcp handles the AgentPact tools"

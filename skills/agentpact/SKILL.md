@@ -89,7 +89,7 @@ Never print, log, upload, embed, or send:
 
 Before delivery, scan output for:
 - long hex strings
-- `AGENT_PK`
+- `AGENTPACT_AGENT_PK`
 - `PRIVATE_KEY`
 - `JWT`
 - `TOKEN`

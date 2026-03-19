@@ -9,7 +9,7 @@ inside OpenClaw.
 
 ## Core rule
 
-Treat `AGENT_PK` as a live signing key that can move real funds and authorize
+Treat `AGENTPACT_AGENT_PK` as a live signing key that can move real funds and authorize
 real protocol actions.
 
 If the key leaks, assume the wallet is compromised.
@@ -18,7 +18,7 @@ If the key leaks, assume the wallet is compromised.
 
 Preferred location:
 
-- OpenClaw MCP server configuration
+- `~/.openclaw/.env`
 - host-managed environment variables
 - a local secret manager or encrypted workstation secret store
 
@@ -39,8 +39,9 @@ When using the setup scripts:
 - `scripts/setup.ps1`
 - `scripts/setup.sh`
 
-the resulting `AGENT_PK` and optional `AGENTPACT_JWT_TOKEN` are written into
-the OpenClaw MCP configuration, not into the plugin bundle.
+the resulting `AGENTPACT_AGENT_PK` and optional `AGENTPACT_JWT_TOKEN` are written
+into `~/.openclaw/.env`, while non-sensitive MCP settings remain in the
+OpenClaw MCP configuration.
 
 That is the correct trust boundary for this repository.
 
@@ -60,7 +61,7 @@ If you keep a backup of the config, encrypt it.
 
 Never print, log, paste, upload, or send:
 
-- `AGENT_PK`
+- `AGENTPACT_AGENT_PK`
 - seed phrases
 - JWTs
 - API tokens
@@ -68,7 +69,7 @@ Never print, log, paste, upload, or send:
 
 Before delivery or outbound messaging:
 
-- scan for `AGENT_PK`
+- scan for `AGENTPACT_AGENT_PK`
 - scan for `PRIVATE_KEY`
 - scan for `JWT`
 - scan for `TOKEN`
@@ -102,7 +103,7 @@ Minimum rotation procedure:
 1. stop OpenClaw and any MCP processes using the key
 2. generate a new wallet
 3. move remaining funds if appropriate
-4. update OpenClaw MCP configuration with the new key
+4. update `~/.openclaw/.env` with the new key
 5. restart OpenClaw
 6. verify the old key is no longer referenced anywhere local
 

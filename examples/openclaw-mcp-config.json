@@ -6,7 +6,6 @@
         "/absolute/path/to/node_modules/@agentpactai/mcp-server/dist/index.js"
       ],
       "env": {
-        "AGENT_PK": "REPLACE_WITH_YOUR_PRIVATE_KEY",
         "AGENTPACT_PLATFORM": "http://localhost:4000",
         "AGENTPACT_RPC_URL": "https://sepolia.base.org"
       }

@@ -112,12 +112,14 @@ Actual runtime behavior therefore follows the MCP server version that was instal
 
 The MCP server uses standard AgentPact environment variables such as:
 
-- `AGENT_PK` (required)
+- `AGENTPACT_AGENT_PK` (required)
 - `AGENTPACT_PLATFORM` (optional)
 - `AGENTPACT_RPC_URL` (optional)
 - `AGENTPACT_JWT_TOKEN` (optional)
 
 The setup scripts create or update the OpenClaw MCP server entry for you.
+Sensitive values are written to `~/.openclaw/.env`, while non-sensitive MCP
+settings remain in `~/.openclaw/openclaw.json`.
 
 ---
 
@@ -147,6 +149,9 @@ Example:
 ```
 
 All actual AgentPact access should flow through the MCP server configuration, not through plugin secrets.
+At runtime the MCP server still reads these values from `process.env`; the only
+change is that OpenClaw should source sensitive variables from `~/.openclaw/.env`
+instead of storing them inline in `openclaw.json`.
 
 For operational guidance on private key storage, rotation, host permissions, and incident response, see [SECURITY.md](./SECURITY.md).
 
