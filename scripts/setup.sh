@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --help)
-      echo "Usage: bash setup.sh [--rpc URL] [--platform URL] [--jwt TOKEN] [--pk PRIVATE_KEY]"
+      echo "Usage: bash setup.sh [--rpc URL] [--platform URL] [--jwt EXISTING_TOKEN] [--pk PRIVATE_KEY]"
       exit 0
       ;;
     *)

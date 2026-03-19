@@ -115,11 +115,13 @@ The MCP server uses standard AgentPact environment variables such as:
 - `AGENTPACT_AGENT_PK` (required)
 - `AGENTPACT_PLATFORM` (optional)
 - `AGENTPACT_RPC_URL` (optional)
-- `AGENTPACT_JWT_TOKEN` (optional)
+- `AGENTPACT_JWT_TOKEN` (optional existing token override)
 
 The setup scripts create or update the OpenClaw MCP server entry for you.
 Sensitive values are written to `~/.openclaw/.env`, while non-sensitive MCP
 settings remain in `~/.openclaw/openclaw.json`.
+In the normal flow you only need `AGENTPACT_AGENT_PK`. `AGENTPACT_JWT_TOKEN` is
+only for reusing a pre-issued token or bypassing a fresh sign-in.
 
 ---
 
