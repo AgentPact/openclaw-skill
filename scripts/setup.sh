@@ -14,6 +14,7 @@ RPC_URL=""
 PLATFORM_URL=""
 JWT_TOKEN=""
 AGENT_PK_VALUE=""
+APPLY_CHANGES="false"
 
 set_env_line() {
   local file="$1"
@@ -25,6 +26,9 @@ set_env_line() {
     sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
     rm -f "${file}.bak"
   else
+    if [ -s "$file" ] && [ "$(tail -c 1 "$file" 2>/dev/null || true)" != "" ]; then
+      printf '\n' >> "$file"
+    fi
     printf '%s=%s\n' "$key" "$value" >> "$file"
   fi
 }
@@ -47,8 +51,12 @@ while [[ $# -gt 0 ]]; do
       AGENT_PK_VALUE="$2"
       shift 2
       ;;
+    --apply)
+      APPLY_CHANGES="true"
+      shift
+      ;;
     --help)
-      echo "Usage: bash setup.sh [--rpc URL] [--platform URL] [--jwt EXISTING_TOKEN] [--pk PRIVATE_KEY]"
+      echo "Usage: bash setup.sh [--rpc URL] [--platform URL] [--jwt EXISTING_TOKEN] [--pk PRIVATE_KEY] [--apply]"
       exit 0
       ;;
     *)
@@ -98,12 +106,53 @@ MCP_VERSION=$(node -p "try { require('$MCP_DIR/node_modules/@agentpactai/mcp-ser
 mkdir -p "$(dirname "$CONFIG_FILE")"
 touch "$ENV_FILE"
 
-set_env_line "$ENV_FILE" "AGENTPACT_AGENT_PK" "${AGENT_PK_VALUE:-REPLACE_WITH_YOUR_PRIVATE_KEY}"
+echo ""
+echo "Proposed OpenClaw MCP entry (mcpServers.agentpact):"
+node -e "
+const entry = '$MCP_ENTRY';
+const rpcUrl = '$RPC_URL';
+const platformUrl = '$PLATFORM_URL';
+const env = {};
+if (rpcUrl) env.AGENTPACT_RPC_URL = rpcUrl;
+if (platformUrl) env.AGENTPACT_PLATFORM = platformUrl;
+console.log(JSON.stringify({
+  command: 'node',
+  args: [entry],
+  env,
+}, null, 2));
+"
+
+echo ""
+echo "Proposed .env entries:"
+echo "AGENTPACT_AGENT_PK=${AGENT_PK_VALUE:-REPLACE_WITH_YOUR_PRIVATE_KEY}"
 if [ -n "$JWT_TOKEN" ]; then
-  set_env_line "$ENV_FILE" "AGENTPACT_JWT_TOKEN" "$JWT_TOKEN"
+  echo "AGENTPACT_JWT_TOKEN=$JWT_TOKEN"
+else
+  echo "# AGENTPACT_JWT_TOKEN=<optional existing token>"
 fi
 
-node -e "
+if [ "$APPLY_CHANGES" = "true" ]; then
+  CONFIG_BACKUP=""
+  ENV_BACKUP=""
+
+  if [ -f "$CONFIG_FILE" ]; then
+    STAMP=$(date +%Y%m%d-%H%M%S)
+    CONFIG_BACKUP="${CONFIG_FILE}.${STAMP}.bak"
+    cp "$CONFIG_FILE" "$CONFIG_BACKUP"
+  fi
+
+  if [ -f "$ENV_FILE" ]; then
+    STAMP=$(date +%Y%m%d-%H%M%S)
+    ENV_BACKUP="${ENV_FILE}.${STAMP}.bak"
+    cp "$ENV_FILE" "$ENV_BACKUP"
+  fi
+
+  set_env_line "$ENV_FILE" "AGENTPACT_AGENT_PK" "${AGENT_PK_VALUE:-REPLACE_WITH_YOUR_PRIVATE_KEY}"
+  if [ -n "$JWT_TOKEN" ]; then
+    set_env_line "$ENV_FILE" "AGENTPACT_JWT_TOKEN" "$JWT_TOKEN"
+  fi
+
+  node -e "
 const fs = require('fs');
 const path = '$CONFIG_FILE';
 const entry = '$MCP_ENTRY';
@@ -114,10 +163,15 @@ let cfg = {};
 try {
   if (fs.existsSync(path)) {
     const raw = fs.readFileSync(path, 'utf8');
-    cfg = JSON.parse(raw.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, ''));
+    if (raw.trim()) {
+      cfg = JSON.parse(raw);
+    }
   }
 } catch (e) {
-  cfg = {};
+  console.error('Failed to parse existing OpenClaw config at ' + path);
+  console.error('The setup script will not overwrite an unreadable config file.');
+  console.error(e.message);
+  process.exit(1);
 }
 
 cfg.mcpServers = cfg.mcpServers || {};
@@ -134,6 +188,7 @@ cfg.mcpServers.agentpact = {
 fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
 console.log('Updated MCP config at ' + path);
 "
+fi
 
 echo ""
 echo "AgentPact MCP setup complete."
@@ -141,12 +196,20 @@ echo "MCP entry:   $MCP_ENTRY"
 [ -n "$MCP_VERSION" ] && echo "MCP version: $MCP_VERSION (installed via @latest)"
 echo "Config file: $CONFIG_FILE"
 echo "Env file:    $ENV_FILE"
+[ "$APPLY_CHANGES" = "true" ] && echo "Changes:     applied"
+[ "$APPLY_CHANGES" != "true" ] && echo "Changes:     dry run only (no config files were modified)"
+[ "$APPLY_CHANGES" = "true" ] && [ -n "${CONFIG_BACKUP:-}" ] && echo "Config backup: $CONFIG_BACKUP"
+[ "$APPLY_CHANGES" = "true" ] && [ -n "${ENV_BACKUP:-}" ] && echo "Env backup:    $ENV_BACKUP"
 [ -n "$PLATFORM_URL" ] && echo "Platform:    $PLATFORM_URL"
 [ -n "$RPC_URL" ] && echo "RPC URL:     $RPC_URL"
-[ -z "$AGENT_PK_VALUE" ] && echo "Set AGENTPACT_AGENT_PK in the OpenClaw .env file before using AgentPact."
+[ "$APPLY_CHANGES" = "true" ] && [ -z "$AGENT_PK_VALUE" ] && echo "Set AGENTPACT_AGENT_PK in the OpenClaw .env file before using AgentPact."
 echo ""
 echo "This repository now assumes MCP-first usage:"
 echo "- mcp handles the AgentPact tools"
 echo "- the AgentPact OpenClaw plugin provides the bundled skill, heartbeat, docs, and templates"
 echo ""
-echo "Restart OpenClaw to load the MCP server configuration."
+if [ "$APPLY_CHANGES" = "true" ]; then
+  echo "Restart OpenClaw to load the MCP server configuration."
+else
+  echo "Review the proposed config above. Re-run with --apply to write changes."
+fi

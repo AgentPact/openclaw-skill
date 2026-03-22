@@ -2,7 +2,8 @@ param(
     [string]$Rpc = "",
     [string]$Pk = "",
     [string]$Platform = "",
-    [string]$Jwt = ""
+    [string]$Jwt = "",
+    [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +23,13 @@ function Set-EnvLine {
 
     $lines = @()
     if (Test-Path $Path) {
-        $lines = Get-Content $Path
+        $raw = [System.IO.File]::ReadAllText($Path)
+        if ($raw.Length -gt 0) {
+            $normalized = $raw -replace "(\r?\n)$", ""
+            if ($normalized.Length -gt 0) {
+                $lines = $normalized -split "\r?\n"
+            }
+        }
     }
 
     $entry = "$Name=$Value"
@@ -39,7 +46,63 @@ function Set-EnvLine {
         $lines += $entry
     }
 
-    Set-Content -Path $Path -Value $lines -Encoding utf8
+    $content = if ($lines.Count -gt 0) {
+        ($lines -join "`r`n") + "`r`n"
+    }
+    else {
+        "$entry`r`n"
+    }
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $content, $utf8NoBom)
+}
+
+function Read-JsonConfigAsHashtable {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        return @{}
+    }
+
+    $raw = Get-Content $Path -Raw
+    if (-not $raw.Trim()) {
+        return @{}
+    }
+
+    try {
+        return $raw | ConvertFrom-Json -AsHashtable
+    }
+    catch {
+        throw "Failed to parse existing OpenClaw config at $Path. The setup script will not overwrite an unreadable config file."
+    }
+}
+
+function Backup-FileIfExists {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = "$Path.$stamp.bak"
+    Copy-Item -Path $Path -Destination $backupPath -Force
+    return $backupPath
+}
+
+function Write-JsonFileNoBom {
+    param(
+        [string]$Path,
+        [object]$Value
+    )
+
+    $jsonOut = $Value | ConvertTo-Json -Depth 10
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $jsonOut + "`r`n", $utf8NoBom)
 }
 
 Write-Host "AgentPact OpenClaw setup (MCP-first mode)"
@@ -78,64 +141,80 @@ finally {
     Pop-Location
 }
 
-Write-Host "Updating OpenClaw MCP configuration..."
+Write-Host "Preparing OpenClaw MCP configuration..."
 
 New-Item -ItemType Directory -Force -Path (Split-Path $configFile -Parent) | Out-Null
 if (-not (Test-Path $envFile)) {
     New-Item -ItemType File -Force -Path $envFile | Out-Null
 }
 
-$cfg = @{}
-if (Test-Path $configFile) {
-    try {
-        $raw = Get-Content $configFile -Raw
-        $raw = [regex]::Replace($raw, '//.*$', '', 'Multiline')
-        $raw = [regex]::Replace($raw, '/\*[\s\S]*?\*/', '')
-        if ($raw.Trim()) {
-            $cfg = $raw | ConvertFrom-Json -AsHashtable
-        }
-    }
-    catch {
-        $cfg = @{}
-    }
-}
-
-if (-not $cfg.ContainsKey("mcpServers")) {
-    $cfg["mcpServers"] = @{}
-}
-
-if ($Rpc) {
-    $envMapRpc = $Rpc
-}
-if ($Platform) {
-    $envMapPlatform = $Platform
-}
-
-Set-EnvLine -Path $envFile -Name "AGENTPACT_AGENT_PK" -Value $(if ($Pk) { $Pk } else { "REPLACE_WITH_YOUR_PRIVATE_KEY" })
-if ($Jwt) {
-    Set-EnvLine -Path $envFile -Name "AGENTPACT_JWT_TOKEN" -Value $Jwt
-}
-
-$cfg["mcpServers"]["agentpact"] = @{
+$proposedServerConfig = @{
     command = "node"
     args = @($mcpEntry)
     env = @{}
 }
 
 if ($Rpc) {
-    $cfg["mcpServers"]["agentpact"]["env"]["AGENTPACT_RPC_URL"] = $Rpc
+    $proposedServerConfig["env"]["AGENTPACT_RPC_URL"] = $Rpc
 }
 if ($Platform) {
-    $cfg["mcpServers"]["agentpact"]["env"]["AGENTPACT_PLATFORM"] = $Platform
+    $proposedServerConfig["env"]["AGENTPACT_PLATFORM"] = $Platform
 }
 
-$cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile
+Write-Host ""
+Write-Host "Proposed OpenClaw MCP entry (mcpServers.agentpact):"
+$proposedServerConfig | ConvertTo-Json -Depth 10 | Write-Host
+
+Write-Host ""
+Write-Host "Proposed .env entries:"
+Write-Host "AGENTPACT_AGENT_PK=$(if ($Pk) { $Pk } else { 'REPLACE_WITH_YOUR_PRIVATE_KEY' })"
+if ($Jwt) {
+    Write-Host "AGENTPACT_JWT_TOKEN=$Jwt"
+}
+else {
+    Write-Host "# AGENTPACT_JWT_TOKEN=<optional existing token>"
+}
+
+$configBackupPath = $null
+$envBackupPath = $null
+
+if ($Apply) {
+    $cfg = Read-JsonConfigAsHashtable -Path $configFile
+
+    if (-not $cfg.ContainsKey("mcpServers")) {
+        $cfg["mcpServers"] = @{}
+    }
+
+    $configBackupPath = Backup-FileIfExists -Path $configFile
+    $envBackupPath = Backup-FileIfExists -Path $envFile
+
+    Set-EnvLine -Path $envFile -Name "AGENTPACT_AGENT_PK" -Value $(if ($Pk) { $Pk } else { "REPLACE_WITH_YOUR_PRIVATE_KEY" })
+    if ($Jwt) {
+        Set-EnvLine -Path $envFile -Name "AGENTPACT_JWT_TOKEN" -Value $Jwt
+    }
+
+    $cfg["mcpServers"]["agentpact"] = $proposedServerConfig
+
+    Write-JsonFileNoBom -Path $configFile -Value $cfg
+}
 
 Write-Host ""
 Write-Host "AgentPact MCP setup complete."
 Write-Host "Config file: $configFile"
 Write-Host "Env file:    $envFile"
 Write-Host "MCP entry:   $mcpEntry"
+if ($Apply) {
+    Write-Host "Changes:     applied"
+    if ($configBackupPath) {
+        Write-Host "Config backup: $configBackupPath"
+    }
+    if ($envBackupPath) {
+        Write-Host "Env backup:    $envBackupPath"
+    }
+}
+else {
+    Write-Host "Changes:     dry run only (no config files were modified)"
+}
 if (Test-Path $mcpPackageJson) {
     try {
         $mcpPackage = Get-Content $mcpPackageJson -Raw | ConvertFrom-Json
@@ -148,7 +227,7 @@ if (Test-Path $mcpPackageJson) {
 }
 if ($Platform) { Write-Host "Platform:    $Platform" }
 if ($Rpc) { Write-Host "RPC URL:     $Rpc" }
-if (-not $Pk) {
+if (-not $Pk -and $Apply) {
     Write-Host ""
     Write-Host "Set AGENTPACT_AGENT_PK in the OpenClaw .env file before using AgentPact."
 }
@@ -157,4 +236,9 @@ Write-Host "This repository now assumes MCP-first usage:"
 Write-Host "- mcp handles the AgentPact tools"
 Write-Host "- the AgentPact OpenClaw plugin provides the bundled skill, heartbeat, docs, and templates"
 Write-Host ""
-Write-Host "Restart OpenClaw to load the MCP server configuration."
+if ($Apply) {
+    Write-Host "Restart OpenClaw to load the MCP server configuration."
+}
+else {
+    Write-Host "Review the proposed config above. Re-run with -Apply to write changes."
+}

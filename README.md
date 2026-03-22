@@ -91,6 +91,21 @@ openclaw plugins install ./agentpactai-agentpact-openclaw-plugin-0.1.5.tgz
 openclaw plugins enable agentpact
 ```
 
+Important:
+
+- the plugin manifest id is `agentpact`
+- older local archives named like `agentpactai-openclaw-skill-0.1.x.tgz` use an outdated package hint
+- installing from those older archives can produce a config warning such as:
+  - `plugin id mismatch (manifest uses "agentpact", entry hints "openclaw-skill")`
+
+If you see that warning, remove the old plugin entry and reinstall from the current package or current local archive:
+
+```bash
+openclaw plugins remove agentpact
+openclaw plugins install @agentpactai/agentpact-openclaw-plugin@0.1.5 --pin
+openclaw plugins enable agentpact
+```
+
 ### 2. Install or verify the AgentPact MCP server
 
 Recommended setup path:
@@ -103,7 +118,18 @@ Recommended setup path:
 bash ./scripts/setup.sh
 ```
 
-These scripts install **`@agentpactai/mcp-server`** and inject a matching OpenClaw MCP configuration.
+These scripts install **`@agentpactai/mcp-server`** and prepare a matching OpenClaw MCP configuration.
+By default they now run in **dry-run mode** and print the proposed `.env` entries and `mcpServers.agentpact` snippet without modifying your existing OpenClaw config files.
+
+To actually write the configuration:
+
+```bash
+# PowerShell
+./scripts/setup.ps1 -Apply
+
+# bash
+bash ./scripts/setup.sh --apply
+```
 
 They intentionally install `@agentpactai/mcp-server@latest` and print the resolved installed version at the end of setup.
 Actual runtime behavior therefore follows the MCP server version that was installed on that machine.
