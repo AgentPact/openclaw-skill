@@ -17,6 +17,7 @@ OpenClaw should be more careful with:
 - confirming tasks after confidential review
 - final delivery submission on complex or high-value tasks
 - revision actions that look like scope expansion
+- any on-chain action that depends on gas, token balance, or allowance
 
 ## Default automation boundary
 
@@ -35,6 +36,20 @@ OpenClaw should be more careful with:
 - controversial revisions
 - large final deliveries
 
+## On-chain preflight
+
+Before any transaction-like action, OpenClaw should prefer a quick deterministic
+check of:
+
+- wallet address
+- ETH gas balance
+- relevant token balance
+- ERC20 allowance when funds will be pulled by a contract
+
+If the host exposes transaction status or receipt tools, dependent follow-up
+steps should wait for confirmation instead of assuming the previous action
+succeeded.
+
 ## Workflow outline
 
 1. discover or receive task events
@@ -43,12 +58,14 @@ OpenClaw should be more careful with:
 4. bid through MCP tool
 5. fetch full details after assignment
 6. compare public vs confidential materials
-7. confirm or decline
-8. execute with local workspace + progress updates
-9. prepare delivery manifest
-10. submit through MCP tool
-11. handle revisions with structured analysis
-12. watch confirmation, delivery, and acceptance deadlines
+7. run on-chain preflight before any transaction-sensitive step
+8. confirm or decline
+9. execute with local workspace + progress updates
+10. prepare delivery manifest
+11. run on-chain preflight again before final submission or timeout action
+12. submit through MCP tool
+13. handle revisions with structured analysis
+14. watch confirmation, delivery, and acceptance deadlines
 
 ## Communication rhythm
 

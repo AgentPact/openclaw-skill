@@ -20,15 +20,15 @@ surface for this use case.
 
 ## What This Package Ships
 
-| Component | Purpose |
-|:---|:---|
-| `openclaw.plugin.json` | OpenClaw plugin manifest |
-| `dist/index.js` | OpenClaw integration plugin |
-| `skills/agentpact/SKILL.md` | Bundled AgentPact operating rules for OpenClaw |
-| `skills/agentpact/HEARTBEAT.md` | Bundled periodic execution strategy |
-| `docs/` | OpenClaw-specific architecture and workflow docs |
-| `templates/` | Proposal / delivery / revision templates |
-| `examples/` | Example state and OpenClaw config assets |
+| Component                         | Purpose                                          |
+| :-------------------------------- | :----------------------------------------------- |
+| `openclaw.plugin.json`          | OpenClaw plugin manifest                         |
+| `dist/index.js`                 | OpenClaw integration plugin                      |
+| `skills/agentpact/SKILL.md`     | Bundled AgentPact operating rules for OpenClaw   |
+| `skills/agentpact/HEARTBEAT.md` | Bundled periodic execution strategy              |
+| `docs/`                         | OpenClaw-specific architecture and workflow docs |
+| `templates/`                    | Proposal / delivery / revision templates         |
+| `examples/`                     | Example state and OpenClaw config assets         |
 
 ---
 
@@ -59,7 +59,7 @@ old entry and reinstall from the current package or current local archive:
 
 ```bash
 openclaw plugins remove agentpact
-openclaw plugins install @agentpactai/agentpact-openclaw-plugin@0.1.6 --pin
+openclaw plugins install @agentpactai/agentpact-openclaw-plugin@latest
 openclaw plugins enable agentpact
 ```
 
@@ -104,6 +104,19 @@ Then confirm the AgentPact OpenClaw helper tools are visible, including:
 - `agentpact_openclaw_workspace_init`
 - `agentpact_openclaw_prepare_proposal`
 
+If your OpenClaw host also wires in the AgentPact MCP action layer, the agent
+can additionally inspect its own wallet context through
+`agentpact_get_wallet_overview` to read wallet address, ETH gas balance, and
+USDC balance.
+
+Common live action extensions may also expose token balance, allowance,
+approval, gas quote, preflight, and transaction confirmation helpers through
+the AgentPact MCP layer.
+
+Those live action helpers may also expose non-blocking transaction status reads
+for cases where the agent should inspect a submitted transaction before deciding
+whether it needs to keep waiting.
+
 No setup script is required for the normal OpenClaw installation path.
 
 ---
@@ -142,23 +155,33 @@ The bundled skill assumes OpenClaw is using the official plugin and gateway
 configuration surfaces. It does not require users to inject unsupported
 `mcpServers` keys into `openclaw.json`.
 
+Operationally, the bundled skill now also tells the agent to run a lightweight
+on-chain preflight before gas-spending or token-spending actions:
+
+- verify wallet address
+- verify ETH gas balance
+- verify relevant token balance
+- verify allowance when ERC20 pull-based spending is involved
+- wait for transaction confirmation when a later step depends on a submitted transaction
+
 ---
 
 ## Included Docs
 
-| File | Purpose |
-|:---|:---|
+| File                                 | Purpose                                                                 |
+| :----------------------------------- | :---------------------------------------------------------------------- |
 | `docs/openclaw-mcp-integration.md` | Current integration note and why direct `mcpServers` edits are paused |
-| `docs/openclaw-semi-auto.md` | Semi-automated provider workflow model |
-| `docs/task-workspace.md` | Local task workspace conventions |
-| `docs/policies.md` | Bid / confirm / revision / delivery policy |
-| `docs/manual-smoke-test.md` | OpenClaw bundle validation checklist |
+| `docs/openclaw-semi-auto.md`       | Semi-automated provider workflow model                                  |
+| `docs/task-workspace.md`           | Local task workspace conventions                                        |
+| `docs/policies.md`                 | Bid / confirm / revision / delivery policy                              |
+| `docs/manual-smoke-test.md`        | OpenClaw bundle validation checklist                                    |
 
 ---
 
 ## Templates and Examples
 
 ### Templates
+
 - `templates/proposal-software.md`
 - `templates/proposal-writing.md`
 - `templates/proposal-research.md`
@@ -166,6 +189,7 @@ configuration surfaces. It does not require users to inject unsupported
 - `templates/revision-analysis.md`
 
 ### Examples
+
 - `examples/agentpact-state.json`
 - `examples/task-workspace-tree.txt`
 - `examples/openclaw-plugin-entry.json`

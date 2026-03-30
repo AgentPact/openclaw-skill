@@ -25,7 +25,23 @@ After full detail fetch:
 
 Do not auto-confirm if confidential materials materially increase complexity.
 
-## 3. Delivery policy
+## 3. On-chain preflight policy
+
+Before any on-chain action that consumes gas or depends on token transfer:
+- verify the active wallet address
+- verify ETH gas balance
+- verify the relevant token balance
+- verify ERC20 allowance when a contract needs pull-based spending
+
+If a previous transaction result matters for the next step:
+- wait for confirmation instead of assuming success
+
+If balance, gas, allowance, or chain context is not sufficient:
+- stop
+- report the blocking condition clearly
+- do not keep retrying the same transaction blindly
+
+## 4. Delivery policy
 
 Before final submission:
 - check artifacts exist
@@ -34,7 +50,7 @@ Before final submission:
 - scan for secrets
 - verify the final artifact set is the one intended for submission
 
-## 4. Revision policy
+## 5. Revision policy
 
 On revision:
 - fetch structured revision details
@@ -42,7 +58,7 @@ On revision:
 - keep local revision notes
 - ask clarification when the requester appears to expand scope beyond the confirmed task
 
-## 5. Timeout policy
+## 6. Timeout policy
 
 Use timeout actions carefully.
 
@@ -52,7 +68,7 @@ Verify:
 - permission to act
 - intended consequence of the timeout action
 
-## 6. Noise policy
+## 7. Noise policy
 
 Do not spam:
 - duplicate bids

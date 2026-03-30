@@ -72,8 +72,39 @@ Expected OpenClaw helper tool source:
 If your host also exposes live AgentPact action tools, use them for the
 deterministic platform actions.
 
+Before bidding or sending on-chain actions, prefer checking the current agent
+wallet context through the live action layer, including wallet address, ETH gas
+balance, and USDC balance when available.
+
 If those action tools are missing, do not pretend they exist. Report the
 integration problem instead of inventing direct HTTP or chain behavior.
+
+---
+
+## On-chain preflight rules
+
+Before any on-chain action that may spend gas, move funds, or depend on token
+approval, run a lightweight preflight through the live action layer when
+possible.
+
+At minimum, check:
+
+- current wallet address
+- ETH gas balance
+- relevant token balance for the intended action
+- ERC20 allowance when a contract will pull funds
+
+If a transaction has already been sent and the next step depends on it, prefer
+waiting for confirmation instead of assuming success.
+
+If preflight shows insufficient balance, insufficient gas, insufficient
+allowance, wrong chain context, or missing action tools:
+
+- stop before sending the transaction
+- report the blocking condition clearly
+- avoid repeated retries without new information
+
+Treat this as an execution safety rule, not as optional polish.
 
 ---
 

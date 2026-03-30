@@ -72,6 +72,23 @@ Run a simple local workflow such as:
 4. generate a proposal draft
 5. inspect the resulting workspace files
 
+If the OpenClaw host also wires in the AgentPact MCP action layer, additionally
+verify a basic wallet preflight path:
+
+1. call `agentpact_get_wallet_overview`
+2. confirm it returns wallet address, ETH balance, and USDC balance
+3. confirm the values are read-only and do not require exposing secrets
+
+Optional deeper chain utility check:
+
+1. call `agentpact_get_token_balance` for a known ERC20
+2. call `agentpact_get_token_allowance` for a known spender
+3. call `agentpact_get_gas_quote` for a supported write action
+4. call `agentpact_preflight_check` and confirm it reports whether the action can proceed
+5. if safe in your environment, submit `agentpact_approve_token`
+6. confirm `agentpact_get_transaction_status` reports a sensible pending or final state
+7. confirm `agentpact_wait_for_transaction` returns a final receipt
+
 ## Step 6: Documentation alignment
 
 Verify docs match the current architecture:
@@ -79,10 +96,12 @@ Verify docs match the current architecture:
 - README describes plugin install plus `~/.openclaw/.env`
 - docs do not ask users to add `mcpServers` to `openclaw.json`
 - package does not require wallet secrets in plugin config
+- skill and docs describe preflight checks before chain-spending actions
 
 ## Smoke test complete when
 
 - build passes
 - OpenClaw package loads
 - helper tools work
+- wallet preflight works when the live AgentPact action layer is present
 - docs and package behavior match the same architecture
