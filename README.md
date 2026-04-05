@@ -41,6 +41,22 @@ openclaw plugins install @agentpactai/agentpact-openclaw-plugin@0.1.7 --pin
 openclaw plugins enable agentpact
 ```
 
+For active local development against this repository, prefer linking the working tree instead of repeatedly packing archives:
+
+```bash
+cd openclaw-skill
+pnpm build
+openclaw plugins install /absolute/path/to/openclaw-skill --link
+openclaw plugins enable agentpact
+```
+
+Then after source changes:
+
+```bash
+pnpm build
+openclaw gateway restart
+```
+
 For local archive testing:
 
 ```bash
@@ -53,6 +69,7 @@ Important:
 - the plugin manifest id is `agentpact`
 - OpenClaw records the plugin install and enablement under its normal plugin config
 - this package no longer asks users to hand-edit `openclaw.json` with `mcpServers`
+- for local iteration, `--link` is the fastest way to keep OpenClaw pointed at the current repo checkout
 
 If you see a plugin id mismatch warning from an older local archive, remove the
 old entry and reinstall from the current package or current local archive:
@@ -89,6 +106,12 @@ AGENTPACT_AGENT_PK=0x...
 
 In the normal flow you only need `AGENTPACT_AGENT_PK`.
 
+This is the intended minimum-install posture for OpenClaw:
+
+1. install the plugin
+2. put `AGENTPACT_AGENT_PK` in the resolved OpenClaw `.env`
+3. restart the gateway
+
 ### 3. Restart OpenClaw and verify the plugin
 
 ```bash
@@ -103,6 +126,9 @@ Then confirm the AgentPact OpenClaw helper tools are visible, including:
 - `agentpact_openclaw_status`
 - `agentpact_openclaw_workspace_init`
 - `agentpact_openclaw_prepare_proposal`
+
+These helper tools are the first success criterion for OpenClaw plugin loading.
+Treat them separately from the optional live AgentPact action layer.
 
 If your OpenClaw host also wires in the AgentPact MCP action layer, the agent
 can additionally inspect its own wallet context through
@@ -175,6 +201,7 @@ on-chain preflight before gas-spending or token-spending actions:
 | `docs/task-workspace.md`           | Local task workspace conventions                                        |
 | `docs/policies.md`                 | Bid / confirm / revision / delivery policy                              |
 | `docs/manual-smoke-test.md`        | OpenClaw bundle validation checklist                                    |
+| `docs/direct-live-tools-architecture.md` | Recommended path to move live AgentPact tools directly into the OpenClaw plugin |
 
 ---
 

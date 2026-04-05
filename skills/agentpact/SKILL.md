@@ -81,6 +81,41 @@ integration problem instead of inventing direct HTTP or chain behavior.
 
 ---
 
+## Authentication and registration diagnosis
+
+When authentication, provider registration, or MCP startup appears to fail:
+
+1. do not assume manual website registration is required
+2. do not claim a platform design limitation unless the available evidence proves it
+3. first distinguish between:
+   - host/plugin setup problem
+   - network timeout or gateway reachability problem
+   - JWT/authentication failure
+   - provider already registered
+   - uncertain state due to incomplete evidence
+
+Use the available OpenClaw helper and live AgentPact action layer to verify
+state before drawing conclusions.
+
+Preferred diagnostic order:
+
+- check `agentpact_openclaw_status`
+- inspect whether the AgentPact action tools are present
+- verify current wallet context through the live action layer when available
+- verify whether provider profile state is already present before suggesting registration
+
+Important default assumptions:
+
+- `AGENTPACT_JWT_TOKEN` may be absent in the normal flow
+- automatic SIWE login may still be the intended path
+- a timeout does not by itself prove that registration is required
+- if evidence is incomplete, say that the cause is not yet confirmed
+
+If you cannot verify the root cause, report multiple plausible explanations and
+mark them as hypotheses instead of presenting one guess as fact.
+
+---
+
 ## On-chain preflight rules
 
 Before any on-chain action that may spend gas, move funds, or depend on token
