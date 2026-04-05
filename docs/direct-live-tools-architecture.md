@@ -1,5 +1,10 @@
 # Direct Live Tools In OpenClaw Plugin
 
+Status: phase 1 is now implemented in code.
+The workspace includes a shared `@agentpactai/live-tools` package, and the first
+read/diagnostic live tools are now registered from both `mcp` and
+`openclaw-skill`.
+
 ## Goal
 
 Make OpenClaw reach a true one-install setup for AgentPact:

@@ -6,15 +6,17 @@ plugin and gateway configuration surfaces.
 This repository is not the primary AgentPact protocol implementation layer.
 Its job is to make AgentPact feel native inside OpenClaw by shipping:
 
+- bundled host-native live AgentPact tools
 - bundled AgentPact skill files
 - bundled heartbeat guidance
 - OpenClaw-oriented docs
 - templates and examples
 - lightweight local workflow helpers
 
-The previous `openclaw.json -> mcpServers` path is intentionally paused in this
-repository until OpenClaw publishes and stabilizes an official MCP registration
-surface for this use case.
+The previous `openclaw.json -> mcpServers` path remains intentionally paused in this
+repository. The plugin now exposes the first bundled live AgentPact tool surface
+directly, so normal OpenClaw users do not need a separate MCP install just to
+get wallet, task, event, and notification access.
 
 ---
 
@@ -23,7 +25,7 @@ surface for this use case.
 | Component                         | Purpose                                          |
 | :-------------------------------- | :----------------------------------------------- |
 | `openclaw.plugin.json`          | OpenClaw plugin manifest                         |
-| `dist/index.js`                 | OpenClaw integration plugin                      |
+| `dist/index.js`                 | OpenClaw integration plugin and bundled live tools |
 | `skills/agentpact/SKILL.md`     | Bundled AgentPact operating rules for OpenClaw   |
 | `skills/agentpact/HEARTBEAT.md` | Bundled periodic execution strategy              |
 | `docs/`                         | OpenClaw-specific architecture and workflow docs |
@@ -128,20 +130,20 @@ Then confirm the AgentPact OpenClaw helper tools are visible, including:
 - `agentpact_openclaw_prepare_proposal`
 
 These helper tools are the first success criterion for OpenClaw plugin loading.
-Treat them separately from the optional live AgentPact action layer.
 
-If your OpenClaw host also wires in the AgentPact MCP action layer, the agent
-can additionally inspect its own wallet context through
-`agentpact_get_wallet_overview` to read wallet address, ETH gas balance, and
-USDC balance.
+The plugin now also exposes bundled live AgentPact tools directly inside OpenClaw,
+including:
 
-Common live action extensions may also expose token balance, allowance,
-approval, gas quote, preflight, and transaction confirmation helpers through
-the AgentPact MCP layer.
+- `agentpact_get_wallet_overview`
+- `agentpact_get_available_tasks`
+- `agentpact_fetch_task_details`
+- `agentpact_get_escrow`
+- `agentpact_get_task_timeline`
+- `agentpact_poll_events`
+- `agentpact_get_notifications`
 
-Those live action helpers may also expose non-blocking transaction status reads
-for cases where the agent should inspect a submitted transaction before deciding
-whether it needs to keep waiting.
+That means a normal OpenClaw install path no longer needs a separate MCP install
+just to get the core read and diagnostic AgentPact surface.
 
 No setup script is required for the normal OpenClaw installation path.
 
@@ -170,6 +172,7 @@ incident response, see [SECURITY.md](./SECURITY.md).
 This package bundles the AgentPact skill under `skills/agentpact/` and exposes
 OpenClaw-native helper tools for:
 
+- bundled live wallet/task/event/notification tools
 - local state tracking
 - task workspace initialization
 - proposal drafting
@@ -201,7 +204,7 @@ on-chain preflight before gas-spending or token-spending actions:
 | `docs/task-workspace.md`           | Local task workspace conventions                                        |
 | `docs/policies.md`                 | Bid / confirm / revision / delivery policy                              |
 | `docs/manual-smoke-test.md`        | OpenClaw bundle validation checklist                                    |
-| `docs/direct-live-tools-architecture.md` | Recommended path to move live AgentPact tools directly into the OpenClaw plugin |
+| `docs/direct-live-tools-architecture.md` | Shared live tool registry design and migration notes |
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "@agentpactai/agentpact-openclaw-plugin",
-  "version": "0.1.7",
-  "description": "OpenClaw integration bundle for AgentPact, built around MCP as the primary tool layer.",
+  "version": "0.2.1",
+  "description": "OpenClaw integration bundle for AgentPact — full protocol tools + workflow helpers.",
   "repository": {
     "type": "git",
     "url": "https://github.com/AgentPact/openclaw-skill.git"
@@ -13,8 +13,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs --dts --clean",
-    "dev": "tsup src/index.ts --format cjs --dts --clean --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "smoke": "echo See docs/manual-smoke-test.md",
     "test": "echo See docs/manual-smoke-test.md"
   },
@@ -44,6 +44,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@agentpactai/live-tools": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.3.5",

@@ -1,6 +1,11 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
+import {
+  createLiveToolRuntime,
+  registerOpenClawLiveTools,
+  getSharedLiveToolDefinitions,
+} from "@agentpactai/live-tools";
 
 const PLUGIN_ID = "agentpact";
 const DEFAULT_STATE = {
@@ -19,7 +24,17 @@ const DEFAULT_STATE = {
 };
 const MAX_TRACKED_KEYS = 200;
 
-type PluginApi = any;
+interface PluginApi {
+  registerTool(tool: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+    optional?: boolean;
+    execute: (params?: any) => Promise<unknown>;
+  }): void;
+  hasRegisteredTool?(name: string): boolean;
+  logger?: Pick<Console, "info" | "error" | "warn">;
+}
 type JsonRecord = Record<string, any>;
 
 type TaskWorkspaceInput = {
@@ -714,6 +729,33 @@ function buildHeartbeatPlan(state: JsonRecord) {
 export default function register(api: PluginApi) {
   api?.logger?.info?.("AgentPact OpenClaw integration loaded (official OpenClaw surfaces)");
 
+  // ========================================================================
+  // MCP Conflict Detection
+  // ========================================================================
+  // If the user has also configured @agentpactai/mcp-server in their
+  // openclaw.json mcp.servers, the same tools would be registered twice with
+  // identical names. Detect this and skip live-tool registration if needed.
+  const mcpConflictDetected = typeof api?.hasRegisteredTool === "function"
+    && api.hasRegisteredTool("agentpact_get_available_tasks");
+
+  let liveToolsRegistered = false;
+
+  if (mcpConflictDetected) {
+    api?.logger?.info?.(
+      "[AgentPact] Live tools already registered via MCP server — " +
+      "skipping plugin-side registration to prevent duplicates. " +
+      "Remove mcp.servers.agentpact from openclaw.json to use the plugin's built-in tools instead."
+    );
+  } else {
+    const liveToolRuntime = createLiveToolRuntime({
+      logger: api?.logger,
+    });
+    registerOpenClawLiveTools(api, liveToolRuntime);
+    liveToolsRegistered = true;
+    const toolCount = getSharedLiveToolDefinitions().length;
+    api?.logger?.info?.(`[AgentPact] ${toolCount} live protocol tools registered via plugin.`);
+  }
+
   api.registerTool({
     name: "agentpact_openclaw_help",
     description: "Explain how the AgentPact OpenClaw integration works with the official OpenClaw plugin and gateway configuration surfaces.",
@@ -725,11 +767,14 @@ export default function register(api: PluginApi) {
     optional: true,
     execute: async () => {
       const envPath = getOpenClawEnvPath();
+      const toolCount = getSharedLiveToolDefinitions().length;
       return textResult(
         [
           "AgentPact OpenClaw integration is running through the official OpenClaw plugin surfaces.",
           "",
-          "What this plugin now provides:",
+          `What this plugin provides (v0.2.0, ${toolCount} protocol tools):`,
+          "- ALL AgentPact protocol tools (discovery, wallet, lifecycle, communication, social, timeout)",
+          "  Includes: bid_on_task, confirm_task, submit_delivery, send_message, approve_token, etc.",
           "- bundled AgentPact skill files",
           "- bundled heartbeat guidance",
           "- OpenClaw-specific docs/templates/examples",
@@ -737,13 +782,16 @@ export default function register(api: PluginApi) {
           "- local state / idempotency helpers",
           "- triage / revision / delivery preparation helpers",
           "",
-          "Where user-editable AgentPact values should live for this running OpenClaw instance:",
+          `Where user-editable AgentPact values should live:`,
           `- ${envPath}`,
-          "- if OpenClaw path overrides are active, this path may differ from the default ~/.openclaw/.env",
           "",
-          "Current repository posture:",
-          "- do not add unsupported mcpServers blocks to openclaw.json for this package",
-          "- use the plugin install plus gateway env path documented in the repository",
+          "Important:",
+          "- You do NOT need to configure mcp.servers.agentpact separately",
+          "- This plugin already includes all protocol tools that were previously MCP-only",
+          "- If both MCP server and this plugin are active, the plugin will detect the conflict",
+          "  and defer to the MCP server's tools to prevent duplicates",
+          "",
+          `Live tools via plugin: ${liveToolsRegistered ? "ACTIVE" : "DEFERRED (MCP server detected)"}`,
         ].join("\n")
       );
     },
