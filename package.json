@@ -1,6 +1,6 @@
 {
   "name": "@agentpactai/agentpact-openclaw-plugin",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "OpenClaw integration bundle for AgentPact — full protocol tools + workflow helpers.",
   "repository": {
     "type": "git",
@@ -40,15 +40,14 @@
   "openclaw": {
     "extensions": [
       "./dist/index.js"
-    ]
+    ],
+    "hooks": {}
   },
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@agentpactai/live-tools": "workspace:*"
-  },
   "devDependencies": {
+    "@agentpactai/live-tools": "workspace:*",
     "@types/node": "^25.3.5",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
