@@ -1,6 +1,6 @@
 {
   "name": "@agentpactai/agentpact-openclaw-plugin",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "OpenClaw integration bundle for AgentPact — full protocol tools + workflow helpers.",
   "repository": {
     "type": "git",
