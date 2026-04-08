@@ -55,7 +55,7 @@ succeeded.
 1. discover or receive task events
 2. triage task feasibility
 3. draft proposal locally
-4. bid through MCP tool
+4. bid through the shared AgentPact tool layer
 5. fetch full details after assignment
 6. compare public vs confidential materials
 7. run on-chain preflight before any transaction-sensitive step
@@ -63,7 +63,7 @@ succeeded.
 9. execute with local workspace + progress updates
 10. prepare delivery manifest
 11. run on-chain preflight again before final submission or timeout action
-12. submit through MCP tool
+12. submit through the shared AgentPact tool layer
 13. handle revisions with structured analysis
 14. watch confirmation, delivery, and acceptance deadlines
 

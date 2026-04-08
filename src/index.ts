@@ -4,8 +4,11 @@ import * as os from "os";
 import {
   createLiveToolRuntime,
   registerOpenClawLiveTools,
+  getSharedLiveToolCatalog,
+  getSharedLiveToolCatalogGroups,
   getSharedLiveToolDefinitions,
-} from "@agentpactai/live-tools";
+} from "../../live-tools/dist/index.js";
+import { OPENCLAW_HELPER_TOOL_NAMES, OPENCLAW_HELPER_TOOLS } from "./helper-tools";
 
 const PLUGIN_ID = "agentpact";
 const DEFAULT_STATE = {
@@ -761,7 +764,44 @@ export default function register(api: PluginApi) {
   }
 
   api.registerTool({
-    name: "agentpact_openclaw_help",
+    name: OPENCLAW_HELPER_TOOLS.capabilityCatalog,
+    description: "Return the current AgentPact capability catalog for OpenClaw, including live tool groups, risk levels, and host helper tool names.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {},
+    },
+    optional: true,
+    execute: async () => {
+      const liveCatalog = getSharedLiveToolCatalog();
+      const groups = getSharedLiveToolCatalogGroups();
+
+      return jsonResult({
+        mode: "official-openclaw-surfaces",
+        capabilitySource: "shared-live-tools-registry",
+        liveToolCount: liveCatalog.length,
+        helperToolCount: OPENCLAW_HELPER_TOOL_NAMES.length,
+        helperTools: OPENCLAW_HELPER_TOOL_NAMES,
+        groups,
+        guidance: {
+          firstCall: OPENCLAW_HELPER_TOOLS.status,
+          preferredNextCall: OPENCLAW_HELPER_TOOLS.capabilityCatalog,
+          note: "Use recommendedFirstStepTools, dailyTools, and commonFlows to choose the next AgentPact action instead of relying on a hard-coded full tool list in the skill.",
+          flowUsage: {
+            inboxTriage: "Start here when checking what work already needs attention.",
+            selectedTaskDecision: "Use after selection and before claim or rejection.",
+            activeTaskCommunication: "Use while a task is in progress and requester communication matters.",
+            deliveryPreflight: "Use before final delivery or any transaction-sensitive completion step.",
+            timeoutAction: "Use only after verifying state and deadline conditions.",
+          },
+        },
+        catalog: liveCatalog,
+      });
+    },
+  });
+
+  api.registerTool({
+    name: OPENCLAW_HELPER_TOOLS.help,
     description: "Explain how the AgentPact OpenClaw integration works with the official OpenClaw plugin and gateway configuration surfaces.",
     parameters: {
       type: "object",
@@ -776,9 +816,10 @@ export default function register(api: PluginApi) {
         [
           "AgentPact OpenClaw integration is running through the official OpenClaw plugin surfaces.",
           "",
-          `What this plugin provides (v0.2.0, ${toolCount} protocol tools):`,
+          `What this plugin provides (v0.3.0, ${toolCount} protocol tools):`,
           "- ALL AgentPact protocol tools (discovery, wallet, lifecycle, communication, social, timeout)",
           "  Includes: bid_on_task, confirm_task, submit_delivery, send_message, approve_token, etc.",
+          "- capability catalog helper for host-visible tool groups and risk levels",
           "- bundled AgentPact skill files",
           "- bundled heartbeat guidance",
           "- OpenClaw-specific docs/templates/examples",
@@ -802,7 +843,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_status",
+    name: OPENCLAW_HELPER_TOOLS.status,
     description: "Check OpenClaw plugin/env readiness, local state file presence, and task workspace root.",
     parameters: {
       type: "object",
@@ -855,7 +896,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_state_get",
+    name: OPENCLAW_HELPER_TOOLS.stateGet,
     description: "Read the local AgentPact OpenClaw state file used for heartbeat/idempotency tracking.",
     parameters: {
       type: "object",
@@ -875,7 +916,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_state_update",
+    name: OPENCLAW_HELPER_TOOLS.stateUpdate,
     description: "Update local AgentPact OpenClaw state fields such as active tasks, pending confirmations, or recent ids.",
     parameters: {
       type: "object",
@@ -928,7 +969,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_workspace_init",
+    name: OPENCLAW_HELPER_TOOLS.workspaceInit,
     description: "Create or update a local task workspace for an AgentPact task and seed basic task files.",
     parameters: {
       type: "object",
@@ -954,7 +995,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_mark_processed",
+    name: OPENCLAW_HELPER_TOOLS.markProcessed,
     description: "Record processed event/revision/message/bid keys to support idempotent semi-automated workflows.",
     parameters: {
       type: "object",
@@ -990,7 +1031,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_triage_task",
+    name: OPENCLAW_HELPER_TOOLS.triageTask,
     description: "Perform a local host-side triage pass for a task and persist the result in the task workspace.",
     parameters: {
       type: "object",
@@ -1034,7 +1075,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_prepare_revision",
+    name: OPENCLAW_HELPER_TOOLS.prepareRevision,
     description: "Create a structured local revision analysis for a task and classify items into valid, ambiguous, or scope-risk buckets.",
     parameters: {
       type: "object",
@@ -1105,7 +1146,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_prepare_delivery",
+    name: OPENCLAW_HELPER_TOOLS.prepareDelivery,
     description: "Run a local delivery preflight, update the delivery manifest, and return the checklist result.",
     parameters: {
       type: "object",
@@ -1186,7 +1227,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_review_assignment_delta",
+    name: OPENCLAW_HELPER_TOOLS.reviewAssignmentDelta,
     description: "Compare public vs confidential task detail and write a local assignment delta review.",
     parameters: {
       type: "object",
@@ -1243,7 +1284,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_prepare_proposal",
+    name: OPENCLAW_HELPER_TOOLS.prepareProposal,
     description: "Generate or refresh a local proposal draft for a task inside the task workspace.",
     parameters: {
       type: "object",
@@ -1277,7 +1318,7 @@ export default function register(api: PluginApi) {
   });
 
   api.registerTool({
-    name: "agentpact_openclaw_heartbeat_plan",
+    name: OPENCLAW_HELPER_TOOLS.heartbeatPlan,
     description: "Return a minimal next-step plan for the current AgentPact heartbeat based on local state.",
     parameters: {
       type: "object",

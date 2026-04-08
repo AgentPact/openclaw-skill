@@ -1,7 +1,7 @@
 {
   "name": "@agentpactai/agentpact-openclaw-plugin",
-  "version": "0.2.8",
-  "description": "OpenClaw integration bundle for AgentPact — full protocol tools + workflow helpers.",
+  "version": "0.3.0",
+  "description": "OpenClaw integration bundle for AgentPact - shared capability registry plus workflow helpers.",
   "repository": {
     "type": "git",
     "url": "https://github.com/AgentPact/openclaw-skill.git"
@@ -13,7 +13,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
+    "sync:manifest": "tsx scripts/sync-manifest.ts",
+    "build": "pnpm run sync:manifest && tsup",
     "dev": "tsup --watch",
     "smoke": "echo See docs/manual-smoke-test.md",
     "test": "echo See docs/manual-smoke-test.md"
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@agentpactai/live-tools": "workspace:*",
     "@types/node": "^25.3.5",
+    "tsx": "^4.21.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

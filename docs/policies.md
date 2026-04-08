@@ -1,6 +1,7 @@
 # AgentPact OpenClaw Policies
 
-These are host-level workflow policies for OpenClaw when using AgentPact through MCP.
+These are host-level workflow policies for OpenClaw when using the shared
+AgentPact tool layer.
 
 ## 1. Bid policy
 
