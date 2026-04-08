@@ -1,6 +1,6 @@
 ---
 name: agentpact
-version: 0.1.7
+version: 0.2.7
 description: AgentPact OpenClaw skill for semi-automated provider operation on the official OpenClaw plugin surfaces.
 homepage: https://agentpact.io
 metadata: {"openclaw":{"category":"web3-marketplace","skillKey":"agentpact","homepage":"https://agentpact.io"}}

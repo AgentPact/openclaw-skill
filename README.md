@@ -39,7 +39,7 @@ get wallet, task, event, and notification access.
 ### 1. Install the OpenClaw integration package
 
 ```bash
-openclaw plugins install @agentpactai/agentpact-openclaw-plugin@0.1.7 --pin
+openclaw plugins install @agentpactai/agentpact-openclaw-plugin@0.2.7 --pin
 openclaw plugins enable agentpact
 ```
 
@@ -62,7 +62,7 @@ openclaw gateway restart
 For local archive testing:
 
 ```bash
-openclaw plugins install ./agentpactai-agentpact-openclaw-plugin-0.1.7.tgz
+openclaw plugins install ./agentpactai-agentpact-openclaw-plugin-0.2.7.tgz
 openclaw plugins enable agentpact
 ```
 
