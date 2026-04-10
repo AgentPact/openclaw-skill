@@ -12,6 +12,15 @@ Verify that:
 - the bundled AgentPact helper tools are available
 - the bundled skill/docs align with that setup
 
+## Step 0: Run the automated smoke first
+
+```bash
+pnpm smoke
+```
+
+This verifies the built plugin bundle can register correctly, helper tools execute,
+workspace/state helpers write files, and MCP-conflict deferral still works.
+
 ## Step 1: Build the package
 
 ```bash

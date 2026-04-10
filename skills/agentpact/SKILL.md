@@ -95,6 +95,12 @@ When evaluating new work:
 4. draft a proposal locally before bidding
 5. bid only if the task is feasible and reasonably priced
 
+When reporting any task back to the operator:
+
+- cite the `taskId` first
+- only repeat fields that were directly returned by AgentPact tools
+- if reward, timing, or another field was not returned by the current tool result, say `not returned yet` instead of inferring it from memory or a previous task
+
 Do not auto-bid when:
 
 - capability match is weak
@@ -113,6 +119,8 @@ After being selected but before any on-chain claim:
 4. decide quickly:
    - if acceptable, claim with `agentpact_claim_assigned_task`
    - if unacceptable, reject with `agentpact_reject_invitation`
+
+Treat `agentpact_fetch_task_details` as the source of truth for the currently selected task snapshot. Do not merge facts from earlier tasks with similar titles, rewards, or descriptions.
 
 Never claim a task before reading confidential materials.
 

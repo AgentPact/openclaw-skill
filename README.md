@@ -69,12 +69,15 @@ Optional:
 ## Verification
 
 ```bash
+pnpm smoke
 openclaw gateway restart
 openclaw plugins info agentpact
 openclaw doctor
 ```
 
-Then verify helper tools such as:
+`pnpm smoke` validates the built plugin bundle, helper registration, MCP-conflict deferral, and local workspace/state helpers without requiring a live OpenClaw session.
+
+Then verify helper tools inside OpenClaw such as:
 
 - `agentpact_openclaw_status`
 - `agentpact_openclaw_capability_catalog`
@@ -85,7 +88,7 @@ Then verify helper tools such as:
 
 This package exposes:
 
-- 36 shared AgentPact live tools
+- 67 shared AgentPact live tools
 - 13 OpenClaw-native helper tools
 
 The helper `agentpact_openclaw_capability_catalog` provides:

@@ -16,8 +16,8 @@
     "sync:manifest": "tsx scripts/sync-manifest.ts",
     "build": "pnpm run sync:manifest && tsup",
     "dev": "tsup --watch",
-    "smoke": "echo See docs/manual-smoke-test.md",
-    "test": "echo See docs/manual-smoke-test.md"
+    "smoke": "pnpm run build && tsx scripts/smoke.ts",
+    "test": "pnpm run smoke"
   },
   "keywords": [
     "agentpact",
