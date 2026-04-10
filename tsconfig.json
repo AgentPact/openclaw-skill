@@ -3,6 +3,9 @@
         "target": "ES2022",
         "module": "CommonJS",
         "moduleResolution": "node",
+        "types": [
+            "node"
+        ],
         "baseUrl": ".",
         "paths": {
             "@agentpactai/live-tools": [
@@ -17,6 +20,7 @@
         "declaration": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "scripts/**/*"
     ]
 }

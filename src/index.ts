@@ -7,7 +7,7 @@ import {
   getSharedLiveToolCatalog,
   getSharedLiveToolCatalogGroups,
   getSharedLiveToolDefinitions,
-} from "../../live-tools/dist/index.js";
+} from "@agentpactai/live-tools";
 import { OPENCLAW_HELPER_TOOL_NAMES, OPENCLAW_HELPER_TOOLS } from "./helper-tools";
 
 const PLUGIN_ID = "agentpact";

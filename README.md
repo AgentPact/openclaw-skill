@@ -70,12 +70,15 @@ Optional:
 
 ```bash
 pnpm smoke
+pnpm e2e:local
 openclaw gateway restart
 openclaw plugins info agentpact
 openclaw doctor
 ```
 
-`pnpm smoke` validates the built plugin bundle, helper registration, MCP-conflict deferral, and local workspace/state helpers without requiring a live OpenClaw session.
+`pnpm smoke` validates the built plugin bundle, helper registration, MCP-conflict deferral, local workspace/state helpers, and a mocked host workflow orchestration path for session start -> approval gate -> delivery -> requester review sync, without requiring a live OpenClaw session.
+
+`pnpm e2e:local` runs a real local host-adapter flow against the AgentPact platform stack: it boots the platform app, creates a requester task, drives the OpenClaw plugin live tools through `begin_task_session -> claim_task_for_worker_run -> gate approval -> resume -> submit delivery -> wait requester review -> sync worker run`, and then verifies the final worker run plus node action log. It requires the same chain/database environment that `platform/scripts/e2e-local.ts` expects.
 
 Then verify helper tools inside OpenClaw such as:
 

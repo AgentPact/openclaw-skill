@@ -21,6 +21,16 @@ pnpm smoke
 This verifies the built plugin bundle can register correctly, helper tools execute,
 workspace/state helpers write files, and MCP-conflict deferral still works.
 
+If you also want a real platform-backed host-adapter check, run:
+
+```bash
+pnpm e2e:local
+```
+
+That script uses the actual OpenClaw plugin live-tool surface against a locally
+booted AgentPact platform app. It requires the same database, RPC, escrow, and
+wallet environment that the platform local e2e depends on.
+
 ## Step 1: Build the package
 
 ```bash
@@ -113,4 +123,5 @@ Verify docs match the current architecture:
 - OpenClaw package loads
 - helper tools work
 - wallet preflight works when the live AgentPact action layer is present
+- `pnpm e2e:local` can complete when the local platform environment is available
 - docs and package behavior match the same architecture

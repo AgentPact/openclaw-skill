@@ -1,5 +1,6 @@
 import * as fs from "fs/promises";
 import * as path from "path";
+import { pathToFileURL } from "url";
 import { OPENCLAW_HELPER_TOOL_NAMES } from "../src/helper-tools";
 
 type PluginManifest = {
@@ -15,8 +16,10 @@ type PluginManifest = {
 };
 
 async function main() {
-  const liveToolsModuleUrl = new URL("../../live-tools/dist/index.js", import.meta.url);
-  const liveToolsModule = await import(liveToolsModuleUrl.href) as {
+  const liveToolsModulePath = pathToFileURL(
+    path.resolve(process.cwd(), "..", "live-tools", "dist", "index.js")
+  ).href;
+  const liveToolsModule = await import(liveToolsModulePath) as {
     getSharedLiveToolNames: () => string[];
   };
   const manifestPath = path.resolve(process.cwd(), "openclaw.plugin.json");

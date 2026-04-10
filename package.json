@@ -17,6 +17,7 @@
     "build": "pnpm run sync:manifest && tsup",
     "dev": "tsup --watch",
     "smoke": "pnpm run build && tsx scripts/smoke.ts",
+    "e2e:local": "pnpm --dir ../runtime build && pnpm --dir ../live-tools build && pnpm run build && tsx scripts/e2e-host-local.ts",
     "test": "pnpm run smoke"
   },
   "keywords": [
@@ -49,9 +50,12 @@
   },
   "devDependencies": {
     "@agentpactai/live-tools": "workspace:*",
+    "@agentpactai/runtime": "workspace:*",
     "@types/node": "^25.3.5",
-    "tsx": "^4.21.0",
+    "dotenv": "^17.4.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "viem": "^2.47.12"
   }
 }
