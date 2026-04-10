@@ -210,10 +210,64 @@ async function waitFor<T>(
 
 function getStructuredContent<T>(result: unknown, key: string) {
   const structured = (result as { structuredContent?: Record<string, unknown> })?.structuredContent;
-  assert.ok(structured && typeof structured === "object", "tool result did not include structured content");
+  if (!structured || typeof structured !== "object") {
+    const content = (result as { content?: Array<{ text?: string }> })?.content;
+    const detail = Array.isArray(content)
+      ? content
+          .map((item) => item?.text)
+          .filter((value): value is string => Boolean(value))
+          .join(" | ")
+      : "";
+    throw new Error(
+      detail
+        ? `tool result did not include structured content: ${detail}`
+        : "tool result did not include structured content"
+    );
+  }
   const value = structured[key];
   assert.ok(value !== undefined, `tool result did not include structured content key: ${key}`);
   return value as T;
+}
+
+function isTransientToolFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Can't reach database server") ||
+    message.includes("P1001") ||
+    message.includes("ECONNRESET") ||
+    message.includes("fetch failed") ||
+    message.includes("connection terminated") ||
+    message.includes("Failed to fetch approval requests: 401") ||
+    message.includes("Hint: Authentication failed")
+  );
+}
+
+async function executeStructuredTool<T>(
+  pluginApi: FakePluginApi,
+  toolName: string,
+  params: Record<string, unknown>,
+  key: string,
+  options: { attempts?: number; retryDelayMs?: number } = {}
+) {
+  const attempts = options.attempts ?? 5;
+  const retryDelayMs = options.retryDelayMs ?? 2500;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const result = await pluginApi.getTool(toolName).execute(params);
+      return getStructuredContent<T>(result, key);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts || !isTransientToolFailure(error)) {
+        throw error;
+      }
+      console.warn(`[host-e2e] ${toolName} attempt ${attempt} failed transiently, retrying...`);
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 async function importBuiltPlugin(): Promise<PluginRegister> {
@@ -312,10 +366,16 @@ async function withHostPluginEnvironment<T>(input: {
 }
 
 async function main() {
+  const previousE2EMode = process.env.AGENTPACT_E2E;
+  process.env.AGENTPACT_E2E = "1";
   const chain = getChain();
   const chainConfig = getChainConfig();
-  const requesterPk = normalizePrivateKey(requiredEnv("REQUESTER_PK"));
-  const providerPk = normalizePrivateKey(requiredEnv("PROVIDER_PK"));
+  const requesterPk = normalizePrivateKey(
+    process.env.E2E_REQUESTER_PK || requiredEnv("REQUESTER_PK")
+  );
+  const providerPk = normalizePrivateKey(
+    process.env.E2E_PROVIDER_PK || requiredEnv("PROVIDER_PK")
+  );
 
   const requesterAccount = privateKeyToAccount(requesterPk);
   const providerAccount = privateKeyToAccount(providerPk);
@@ -462,6 +522,7 @@ async function main() {
     const rewardAmount = parseEther("0.0001");
     const requesterDeposit = parseEther(confirm.requesterDeposit);
     const totalEscrowAmount = rewardAmount + requesterDeposit;
+    console.log("[host-e2e] Creating escrow on-chain");
     const createEscrowTx = await requesterClient.createEscrow(
       {
         taskHash: confirm.confirmedHash as `0x${string}`,
@@ -477,6 +538,7 @@ async function main() {
     );
     await publicClient.waitForTransactionReceipt({ hash: createEscrowTx });
 
+    console.log("[host-e2e] Waiting for task CREATED sync");
     const createdTask = await waitFor("task CREATED sync", async () => {
       const response = await api<{ task: TaskRecord }>(baseUrl, `/api/tasks/${taskId}`, {
         token: requesterToken,
@@ -502,6 +564,7 @@ async function main() {
         agentAddress: providerAccount.address,
       },
     });
+    console.log("[host-e2e] Waiting for assignment readiness");
     await waitFor("assignment readiness", async () => {
       if (seenEvents.ASSIGNMENT_SIGNATURE) {
         return seenEvents.ASSIGNMENT_SIGNATURE;
@@ -519,39 +582,34 @@ async function main() {
         rpcUrl: chainConfig.rpcUrl,
       },
       async (pluginApi) => {
-        const session = getStructuredContent<{
+        const session = await executeStructuredTool<{
           node: { id: string };
           run: { id: string; status: string };
           task: { access?: { assignmentRole?: string; canSelectedNodeClaim?: boolean } | null };
           brief: { pendingApprovals: unknown[]; suggestedNextActions?: string[] };
-        }>(
-          await pluginApi.getTool("agentpact_begin_task_session").execute({
+        }>(pluginApi, "agentpact_begin_task_session", {
             taskId,
             hostKind: "OPENCLAW",
             workerKey: "openclaw:local-e2e",
             displayName: "OpenClaw Local Host",
-          }),
-          "session"
-        );
+          }, "session");
         assert.equal(session.run.status, "RUNNING", "begin_task_session should start a RUNNING worker run");
         assert.equal(session.brief.pendingApprovals.length, 0, "fresh session should not have pending approvals");
 
-        const claimed = getStructuredContent<{
+        const claimed = await executeStructuredTool<{
           txHash: string;
           run: { id: string; status: string };
           task: { access?: { assignmentRole?: string } | null };
-        }>(
-          await pluginApi.getTool("agentpact_claim_task_for_worker_run").execute({
+        }>(pluginApi, "agentpact_claim_task_for_worker_run", {
             runId: session.run.id,
             taskId,
             percent: 12,
             currentStep: "Claiming assigned task from the OpenClaw host flow",
             summary: "Selected provider is claiming the task before protected execution.",
-          }),
-          "result"
-        );
+          }, "result");
         assert.equal(claimed.run.status, "RUNNING", "claim_task_for_worker_run should keep the run active");
 
+        console.log("[host-e2e] Waiting for task WORKING sync");
         await waitFor("task WORKING sync", async () => {
           const response = await api<{ task: TaskRecord }>(baseUrl, `/api/tasks/${taskId}`, {
             token: requesterToken,
@@ -559,11 +617,10 @@ async function main() {
           return response.task.status === "WORKING" ? response.task : null;
         });
 
-        const gated = getStructuredContent<{
+        const gated = await executeStructuredTool<{
           run: { status: string };
           approval: { id: string; status: string };
-        }>(
-          await pluginApi.getTool("agentpact_gate_worker_run_for_approval").execute({
+        }>(pluginApi, "agentpact_gate_worker_run_for_approval", {
             runId: session.run.id,
             taskId,
             kind: "STRATEGY_DECISION",
@@ -572,27 +629,26 @@ async function main() {
             percent: 63,
             currentStep: "Waiting for owner sign-off on the publish step",
             runSummary: "Paused for owner approval before final publish.",
-          }),
-          "result"
-        );
+          }, "result");
         assert.equal(gated.run.status, "WAITING_APPROVAL", "gate_worker_run_for_approval should pause the run");
         assert.equal(gated.approval.status, "PENDING", "approval should start pending");
 
-        const approvalWaitPromise = pluginApi.getTool("agentpact_wait_for_approval_resolution").execute({
+        console.log("[host-e2e] Waiting for approval resolution");
+        const approvalWaitPromise = executeStructuredTool<{
+          timedOut: boolean;
+          matchedEvent: string | null;
+          approval: { id: string; status: string };
+        }>(pluginApi, "agentpact_wait_for_approval_resolution", {
           approvalId: gated.approval.id,
           taskId,
           timeoutMs: 30000,
-        });
+        }, "result");
         await new Promise((resolve) => setTimeout(resolve, 800));
         await providerControlAgent!.resolveApprovalRequest(gated.approval.id, {
           decision: "APPROVED",
           responseNote: "Approved by node owner during real host adapter e2e.",
         });
-        const approvalWait = getStructuredContent<{
-          timedOut: boolean;
-          matchedEvent: string | null;
-          approval: { id: string; status: string };
-        }>(await approvalWaitPromise, "result");
+        const approvalWait = await approvalWaitPromise;
         const resolvedApproval = approvalWait.timedOut
           ? await waitFor("approval status reload", async () => {
               const approvals = await providerControlAgent!.getApprovalRequests({ taskId, limit: 20, offset: 0 });
@@ -601,29 +657,25 @@ async function main() {
           : approvalWait.approval;
         assert.equal(resolvedApproval.status, "APPROVED", "approval should resolve as approved");
 
-        const resumed = getStructuredContent<{
+        const resumed = await executeStructuredTool<{
           run: { id: string; status: string; currentStep?: string };
           approval: { id: string; status: string };
-        }>(
-          await pluginApi.getTool("agentpact_resume_worker_run_after_approval").execute({
+        }>(pluginApi, "agentpact_resume_worker_run_after_approval", {
             runId: session.run.id,
             approvalId: gated.approval.id,
             taskId,
             percent: 70,
             currentStep: "Owner approval resolved, resuming host execution",
             summary: "Owner approved the publish step; execution resumed.",
-          }),
-          "result"
-        );
+          }, "result");
         assert.equal(resumed.run.status, "RUNNING", "approved run should resume to RUNNING");
 
         const deliveryHash = `0x${"22".repeat(32)}` as `0x${string}`;
-        const delivered = getStructuredContent<{
+        const delivered = await executeStructuredTool<{
           txHash: string;
           deliveryId: string;
           run: { status: string; currentStep?: string };
-        }>(
-          await pluginApi.getTool("agentpact_submit_delivery_for_worker_run").execute({
+        }>(pluginApi, "agentpact_submit_delivery_for_worker_run", {
             runId: session.run.id,
             taskId,
             escrowId: escrowId.toString(),
@@ -635,15 +687,18 @@ async function main() {
             percent: 100,
             currentStep: "Delivery submitted, waiting for requester review",
             summary: "OpenClaw host adapter submitted delivery through worker run tooling.",
-          }),
-          "result"
-        );
+          }, "result");
         assert.equal(delivered.run.status, "RUNNING", "run should stay active while requester review is pending");
 
-        const requesterReviewWaitPromise = pluginApi.getTool("agentpact_wait_for_requester_review_outcome").execute({
+        console.log("[host-e2e] Waiting for requester review outcome");
+        const requesterReviewWaitPromise = executeStructuredTool<{
+          timedOut: boolean;
+          matchedEvent: "TASK_ACCEPTED" | "REVISION_REQUESTED" | "TASK_SETTLED" | null;
+          task: { status: string };
+        }>(pluginApi, "agentpact_wait_for_requester_review_outcome", {
           taskId,
           timeoutMs: 30000,
-        });
+        }, "result");
         await new Promise((resolve) => setTimeout(resolve, 800));
         await api(baseUrl, "/api/acceptance", {
           method: "POST",
@@ -677,11 +732,7 @@ async function main() {
         const acceptTx = await requesterClient.acceptDelivery(escrowId);
         await publicClient.waitForTransactionReceipt({ hash: acceptTx });
 
-        const requesterReview = getStructuredContent<{
-          timedOut: boolean;
-          matchedEvent: "TASK_ACCEPTED" | "REVISION_REQUESTED" | "TASK_SETTLED" | null;
-          task: { status: string };
-        }>(await requesterReviewWaitPromise, "result");
+        const requesterReview = await requesterReviewWaitPromise;
         const settledReview =
           requesterReview.timedOut || requesterReview.matchedEvent === null
             ? await waitFor("requester review status reload", async () => {
@@ -691,16 +742,13 @@ async function main() {
             : requesterReview.task;
         assert.equal(settledReview.status, "ACCEPTED", "task should be accepted before worker sync");
 
-        const synced = getStructuredContent<{
+        const synced = await executeStructuredTool<{
           outcome: string;
           run: { id: string; status: string; currentStep?: string };
-        }>(
-          await pluginApi.getTool("agentpact_sync_worker_run_with_requester_review").execute({
+        }>(pluginApi, "agentpact_sync_worker_run_with_requester_review", {
             runId: session.run.id,
             outcome: "TASK_ACCEPTED",
-          }),
-          "result"
-        );
+          }, "result");
         assert.equal(synced.run.status, "SUCCEEDED", "accepted requester review should close the run as succeeded");
 
         return {
@@ -746,6 +794,11 @@ async function main() {
   } finally {
     providerControlAgent?.stop();
     await app.close();
+    if (previousE2EMode === undefined) {
+      delete process.env.AGENTPACT_E2E;
+    } else {
+      process.env.AGENTPACT_E2E = previousE2EMode;
+    }
     if (previousChainSyncMode === undefined) {
       delete process.env.CHAIN_SYNC_MODE;
     } else {
